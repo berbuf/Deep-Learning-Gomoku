@@ -4,7 +4,7 @@ import numpy as np
 from mc_tree_search import turn
 
 if __name__ == '__main__':
-    board = np.zeros((3, 19, 19))
+    board = np.zeros((3, 19, 19), np.int8)
 
     # get best move
     pos = turn(board)

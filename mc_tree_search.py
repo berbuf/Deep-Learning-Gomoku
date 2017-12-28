@@ -9,58 +9,52 @@ def put_on_board(board, x, y, value):
     """
     act on board, with player (0, 1), at x, y with value (0, 1)
     """
-    player = math.ceil(board[0][0][0])
-    board[player][y][x] = value
+    player = 1 if board[2, 0, 0] == 0 else 0
+    board[player, y, x] = value
 
 def get_pos_on_board(board, nb_child):
     """
     take a number of children, and return x and y position on board 
     """
     # get unidimensional board of zero and one
-    complete_board = np.add(board[1], board[2]).flatten()
+    complete_board = np.add(board[0], board[1]).flatten()
     # get index of nb_child zero
     pos = (complete_board == 0).nonzero()[0][nb_child]
     # return x, y coordinates
     return pos % 19, pos // 19
 
-def is_leaf(node, board, deepness):
+def is_leaf(node, board, deepness, last_pos):
     """
     check if the tree has reached a leaf
     """
-    # check scoring
-    e = evaluate(board)
+    e = evaluate(board, last_pos)
     if e != 0:
         node.score(e)
-        return True
-    # check deepness
-    if deepness < 0:
-        return True
-    return False
+    return True if not deepness or e else False
 
 def mc_search(node, board, deepness):
     """
+    node: object Node
+    board: np.array(3,19,19)
+    deepness: integer
     do actions on a level of deepness
     """
-
-    # add frequency, and check leaf
-    node.add_frequency()
-    if is_leaf(node, board, deepness):
-        return node
 
     # random move
     nb_child = rd.randint(0, node.get_max_children())
 
-    # get child node
+    # get child node and add frequency
     child = node.get_child(nb_child)
+    child.add_frequency()
 
     # get coordinates of next move
     x, y = get_pos_on_board(board, nb_child)
-
-    # put on board
     put_on_board(board, x, y, 1)
 
-    # recursive call
-    mc_search(child, board, deepness - 1)
+    deepness -= 1
+    if not is_leaf(child, board, deepness, (x, y)):
+        # recursive call
+        mc_search(child, board, deepness)
 
     # clean board
     put_on_board(board, x, y, 0)
@@ -123,11 +117,12 @@ def get_max_children(board):
     """
     get number of possible actions: sum of non played tiles
     """
-    complete_board = np.add(board[1], board[2])
+    complete_board = np.add(board[0], board[1])
     return np.sum(complete_board == 0) - 1
 
 def turn(board):
     """
+    board: np.array((3, 19, 19))
     take a state as input, and return a position 
     """
 
@@ -137,7 +132,7 @@ def turn(board):
     # build tree
     for _ in range(10000):
         node = mc_search(node, board, 3)
-        
+
     # get best move
     x, y = policy(node, board)
 
