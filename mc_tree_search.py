@@ -67,17 +67,41 @@ def mc_search(node, board, deepness):
 
     return node
 
-def evaluate(board):
+def evaluate(maps, pos):
     """
     give a score to the current state
     """
-    # tmp version
-    r = rd.randint(0, 10)
-    if r == 0:
+
+    player = maps[2, 0, 0]
+    pmap = maps[player]
+
+    line = pmap[pos[0]] # get line at pos
+    p = pos[1]
+    if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
         return 1
-    if r == 9:
-        return -1
+
+    line = pmap[:,pos[1]] # get column at pos
+    p = pos[0]
+    if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
+        return 1
+
+    line = pmap.diagonal(pos[1] - pos[0]) # get diagonal 1
+    p = min(pos[0], pos[1])
+    if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
+        return 1
+
+    line = np.fliplr(pmap).diagonal(18 - pos[1] - pos[0]) # get diagonal 2
+    p = min(pos[0], 18 - pos[1])
+    if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
+        return 1
+
+    # check if draw
+    # for y in range(19):
+    #     for x in range(19):
+    #         if not maps[0, y, x] or not maps[1, y, x]:
+    #             return ??
     return 0
+
 
 def policy(node, board):
     """
