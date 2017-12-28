@@ -5,12 +5,11 @@ import random as rd
 import math
 from node import Node
 
-def put_on_board(board, x, y, value):
+def put_on_board(board, pos, player, value):
     """
     act on board, with player (0, 1), at x, y with value (0, 1)
     """
-    player = 1 if board[2, 0, 0] == 0 else 0
-    board[player, y, x] = value
+    board[player, pos[1], pos[0]] = value
 
 def get_pos_on_board(board, nb_child):
     """
@@ -32,7 +31,7 @@ def is_leaf(node, board, deepness, last_pos):
         node.score(e)
     return True if not deepness or e else False
 
-def mc_search(node, board, deepness):
+def mc_search(node, board, deepness, player):
     """
     node: object Node
     board: np.array(3,19,19)
@@ -49,15 +48,15 @@ def mc_search(node, board, deepness):
 
     # get coordinates of next move
     x, y = get_pos_on_board(board, nb_child)
-    put_on_board(board, x, y, 1)
+    put_on_board(board, (x, y), player, 1)
 
     deepness -= 1
     if not is_leaf(child, board, deepness, (x, y)):
         # recursive call
-        mc_search(child, board, deepness)
+        mc_search(child, board, deepness, 0 if player == 1 else 1)
 
     # clean board
-    put_on_board(board, x, y, 0)
+    put_on_board(board, (x, y), player, 0)
 
     return node
 
@@ -128,10 +127,13 @@ def turn(board):
 
     # get root node
     node = Node(get_max_children(board))
+    
+    # get player turn
+    player = 1 if board[2, 0, 0] == 0 else 0
 
     # build tree
-    for _ in range(10000):
-        node = mc_search(node, board, 3)
+    for _ in range(1):
+        node = mc_search(node, board, 3, player)
 
     # get best move
     x, y = policy(node, board)
