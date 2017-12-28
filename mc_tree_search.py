@@ -71,12 +71,29 @@ def evaluate(board):
     """
     give a score to the current state
     """
+    # tmp version
+    r = rd.randint(0, 10)
+    if r == 0:
+        return 1
+    if r == 9:
+        return -1
     return 0
 
-def policy():
+def policy(node, board):
     """
     establish score of all possible action
     """
+
+    p = node.get_policy()
+    print ("policy:")
+    print (p[:100])
+
+    n = np.argmax(p)
+    x, y = get_pos_on_board(board, n)
+    print ("best move:")
+    print ("x : ", x, " y: ", y, " prob: ", p[n])
+
+    return x, y
 
 def get_max_children(board):
     """
@@ -96,5 +113,8 @@ def turn(board):
     # build tree
     for _ in range(10000):
         node = mc_search(node, board, 3)
+        
+    # get best move
+    x, y = policy(node, board)
 
-    return 0, 0
+    return x, y

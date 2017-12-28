@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import numpy as np
+
 class Node(object):
     """
     node object
@@ -38,6 +40,20 @@ class Node(object):
         if nb_child not in self._children :
             self._children[nb_child] = Node(self._max_children - 1)
         return self._children[nb_child]
+
+    def get_score(self):
+        """
+        return sum of score / frequency of all children
+        if node doesn't have children, return its own score
+        """
+        return np.sum([ node.get_score() / self._frequency for _, node in self._children.items() ]
+                      if any(self._children) else self._value)
+
+    def get_policy(self):
+        """
+        return array of children score 
+        """
+        return np.array([ node.get_score() for _, node in self._children.items() ])
 
     def __str__(self):
         """
