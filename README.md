@@ -1,5 +1,2 @@
 # AlphaGomoku Zero
-Implementation of Google's Alphago Zero deep learning algorithm in Gomoku game
-
-
-
+Implementation of Google AlphaGo Zero deep learning algorithm for gomoku game
