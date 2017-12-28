@@ -13,12 +13,6 @@ class Node(object):
         self._max_children = max_children
         self._children = dict()
 
-    def add(self, children):
-        """
-        add children into node object
-        """
-        self._children = children
-
     def score(self, value):
         """
         update score
