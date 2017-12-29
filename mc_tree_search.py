@@ -22,19 +22,12 @@ def get_pos_on_board(board, nb_child):
     # return x, y coordinates
     return pos % 19, pos // 19
 
-def is_leaf(node, board, deepness, player, last_pos):
-    """
-    check if the tree has reached a leaf
-    """
-    e = evaluate(board, player, last_pos)
-    node.score(e)
-    return True if not deepness or e else False
-
 def mc_search(node, board, deepness, player):
     """
     node: object Node
     board: np.array(3,19,19)
     deepness: integer
+    player: 0 for white, 1 for black
     do actions on a level of deepness
     """
 
@@ -49,15 +42,22 @@ def mc_search(node, board, deepness, player):
     x, y = get_pos_on_board(board, nb_child)
     put_on_board(board, (x, y), player, 1)
 
-    deepness -= 1
-    if not is_leaf(child, board, deepness, player, (x, y)):
+    # get action value, negative if black
+    value = evaluate(board, player, (x, y))
+    value *= (1 - 2 * player)
+
+    if not value and deepness:
         # recursive call
-        mc_search(child, board, deepness, 0 if player == 1 else 1)
+        value += mc_search(child, board, deepness - 1, player ^ 1)
+
+    # update score
+    node.score(value)
 
     # clean board
     put_on_board(board, (x, y), player, 0)
 
-    return node
+    # return score
+    return value
 
 def evaluate(maps, player, pos):
     """
@@ -94,16 +94,19 @@ def evaluate(maps, player, pos):
     return 0
 
 
-def policy(node, board):
+def policy(node, board, player):
     """
     establish score of all possible action
     """
 
+    # get array of action value, negative if black
     p = node.get_policy()
-    print ("policy:")
-    print (p[:100])
+    p *= (1 - 2 * player)
 
-    n = np.argmax(p)
+    print ("policy:")
+    print (p)
+
+    n = np.argmax(p) 
     x, y = get_pos_on_board(board, n)
     print ("best move:")
     print ("x : ", x, " y: ", y, " prob: ", p[n])
@@ -125,19 +128,19 @@ def turn(board):
 
     # hyperparameters: number of search, deepness of the search
     trials = 1600
-    deepness = 3
+    deepness = 100
 
     # get root node
     node = Node(get_max_children(board))
-    
+
     # get player turn
     player = 1 if board[2, 0, 0] == 0 else 0
 
     # build tree
     for _ in range(trials):
-        node = mc_search(node, board, deepness, player)
+        mc_search(node, board, deepness - 1, player)
 
     # get best move
-    x, y = policy(node, board)
+    x, y = policy(node, board, player)
 
     return x, y

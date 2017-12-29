@@ -43,11 +43,9 @@ class Node(object):
 
     def get_score(self):
         """
-        return sum of score / frequency of all children
-        if node doesn't have children, return its own score
+        return value  / frequency
         """
-        return (self._value if not any(self._children) else
-                np.sum([ node.get_score() / self._frequency for _, node in self._children.items() ]) )
+        return self._value / self._frequency
 
     def get_policy(self):
         """
