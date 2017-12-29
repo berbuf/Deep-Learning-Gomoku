@@ -34,6 +34,12 @@ def mc_search(node, board, deepness, player):
     # random move
     nb_child = rd.randint(0, node.get_max_children())
 
+    """
+    eventually network policy head will give an array of probabilities
+    nb_child wil be chosen as follow => 
+    argmax ( for children c: Q ( score[c] ) + U ( prob[c] / 1 + frequency[c] ) )
+    """
+
     # get child node and add frequency
     child = node.get_child(nb_child)
     child.add_frequency()
@@ -45,6 +51,10 @@ def mc_search(node, board, deepness, player):
     # get action value, negative if black
     value = evaluate(board, player, (x, y))
     value *= (1 - 2 * player)
+
+    """
+    here network value head will add itw own value
+    """
 
     if not value and deepness:
         # recursive call
