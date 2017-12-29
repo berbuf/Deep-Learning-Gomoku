@@ -22,13 +22,12 @@ def get_pos_on_board(board, nb_child):
     # return x, y coordinates
     return pos % 19, pos // 19
 
-def is_leaf(node, board, deepness, last_pos):
+def is_leaf(node, board, deepness, player, last_pos):
     """
     check if the tree has reached a leaf
     """
-    e = evaluate(board, last_pos)
-    if e != 0:
-        node.score(e)
+    e = evaluate(board, player, last_pos)
+    node.score(e)
     return True if not deepness or e else False
 
 def mc_search(node, board, deepness, player):
@@ -51,7 +50,7 @@ def mc_search(node, board, deepness, player):
     put_on_board(board, (x, y), player, 1)
 
     deepness -= 1
-    if not is_leaf(child, board, deepness, (x, y)):
+    if not is_leaf(child, board, deepness, player, (x, y)):
         # recursive call
         mc_search(child, board, deepness, 0 if player == 1 else 1)
 
@@ -60,12 +59,11 @@ def mc_search(node, board, deepness, player):
 
     return node
 
-def evaluate(maps, pos):
+def evaluate(maps, player, pos):
     """
     give a score to the current state
     """
 
-    player = maps[2, 0, 0]
     pmap = maps[player]
 
     line = pmap[pos[0]] # get line at pos
@@ -125,6 +123,10 @@ def turn(board):
     take a state as input, and return a position 
     """
 
+    # hyperparameters: number of search, deepness of the search
+    trials = 1600
+    deepness = 3
+
     # get root node
     node = Node(get_max_children(board))
     
@@ -132,8 +134,8 @@ def turn(board):
     player = 1 if board[2, 0, 0] == 0 else 0
 
     # build tree
-    for _ in range(1):
-        node = mc_search(node, board, 3, player)
+    for _ in range(trials):
+        node = mc_search(node, board, deepness, player)
 
     # get best move
     x, y = policy(node, board)
