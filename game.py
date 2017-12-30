@@ -1,7 +1,8 @@
  #!/usr/bin/env python3
 
 """
-play a game and save labels (state, policy, winning) to file label_{num_game}.label
+play a game until the end
+save labels (state, policy, winning) to file label_{num_game}.label
 """
 
 import numpy as np
@@ -25,7 +26,7 @@ def print_board(board):
     """
     debug, print current map to term with colours
     """
-    board = np.add(board[0] * 2, board[1])
+    board = np.add(board[0], board[1] * 2)
     print ("board:")
     for line in board:
         l = ""
@@ -35,7 +36,7 @@ def print_board(board):
             elif tile == 2:
                 l += "\033[31;10m" + str(tile) + "\033[0m "
             else:
-                l += " "
+                l += "  "
         print (l)
 
 def game(num_game):
@@ -46,21 +47,23 @@ def game(num_game):
 
     # init game board
     board = np.zeros((3, 19, 19), np.int8)
+    player = 1
 
     e = 0
     while (not e):
+        # next player
+        player ^= 1
 
         # run mcts simulation (p: array of scores, e: game has finished )
-        board, p, player, e = turn(board)
+        board, p, e = turn(board, player)
 
         # save board state, policy vector and current player in tmp folder
         save_tmp_label(board, p, player)
 
-        # set board to next player
-        board[2].fill(player)
+        # debug
+        print_board(board)
 
-    print("end game", player)
-    print_board(board)
+    print("end game", player + 1)
 
     # rewrite tmp file to num_game file with final winner info
     save_final_label(num_game, player)

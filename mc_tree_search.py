@@ -10,6 +10,15 @@ import random as rd
 import math
 from node import Node
 
+WHITE = np.zeros((19, 19))
+BLACK = np.ones((19, 19))
+
+def update_board_player(board, player):
+    """
+    update third layer of board (white(0) => all zeros, black(1) => all ones)
+    """
+    board[2] = WHITE if not player else BLACK
+
 def put_on_board(board, pos, player, value):
     """
     act on board, with player (0, 1), at x, y with value (0, 1)
@@ -77,8 +86,7 @@ def mc_search(node, board, deepness, player):
     do actions on a level of deepness
     """
 
-    # update board player info (white(0) => 1, black(1) => 0)
-    board[2].fill(player ^ 1)
+    update_board_player(board, player)
 
     # random move
     nb_child = rd.randint(0, node.get_max_children())
@@ -109,16 +117,13 @@ def mc_search(node, board, deepness, player):
         # recursive call
         value += mc_search(child, board, deepness - 1, player ^ 1)
 
-    # update score
-    node.score(value)
-
     # clean board
     put_on_board(board, (x, y), player, 0)
 
-    # return score
+    node.score(value)
     return value
 
-def turn(board):
+def turn(board, player):
     """
     board: np.array((3, 19, 19))
     take a state as input, and return board updated, policy vector, player and boolean for game status
@@ -126,13 +131,10 @@ def turn(board):
 
     # hyperparameters: number of search, deepness of the search
     trials = 1600
-    deepness = 5
+    deepness = 3
 
     # get root node
     node = Node(get_max_children(board))
-
-    # get player turn
-    player = 1 if board[2, 0, 0] == 0 else 0
 
     # build tree
     for _ in range(trials):
@@ -152,4 +154,4 @@ def turn(board):
     # get game status (0 or 1)
     e = evaluate(board, player, (x, y))
 
-    return board, p, player, e
+    return board, p, e
