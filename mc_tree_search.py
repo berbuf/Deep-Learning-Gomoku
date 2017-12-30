@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""
+perform a monte carlo tree search for a given board
+with the help of a policy and value network
+"""
+
 import numpy as np
 import random as rd
 import math
@@ -22,6 +27,13 @@ def get_pos_on_board(board, nb_child):
     # return x, y coordinates
     return pos % 19, pos // 19
 
+def get_max_children(board):
+    """
+    get number of possible actions: sum of non played tiles
+    """
+    complete_board = np.add(board[0], board[1])
+    return np.sum(complete_board == 0) - 1
+
 def mc_search(node, board, deepness, player):
     """
     node: object Node
@@ -30,6 +42,9 @@ def mc_search(node, board, deepness, player):
     player: 0 for white, 1 for black
     do actions on a level of deepness
     """
+
+    # update board player info (white(0) => 1, black(1) => 0)
+    board[2].fill(player ^ 1)
 
     # random move
     nb_child = rd.randint(0, node.get_max_children())
@@ -53,7 +68,7 @@ def mc_search(node, board, deepness, player):
     value *= (1 - 2 * player)
 
     """
-    here network value head will add itw own value
+    here network value head will add its own value
     """
 
     if not value and deepness:
@@ -104,41 +119,15 @@ def evaluate(maps, player, pos):
     return 0
 
 
-def policy(node, board, player):
-    """
-    establish score of all possible action
-    """
-
-    # get array of action value, negative if black
-    p = node.get_policy()
-    p *= (1 - 2 * player)
-
-    print ("policy:")
-    print (p)
-
-    n = np.argmax(p) 
-    x, y = get_pos_on_board(board, n)
-    print ("best move:")
-    print ("x : ", x, " y: ", y, " prob: ", p[n])
-
-    return x, y
-
-def get_max_children(board):
-    """
-    get number of possible actions: sum of non played tiles
-    """
-    complete_board = np.add(board[0], board[1])
-    return np.sum(complete_board == 0) - 1
-
 def turn(board):
     """
     board: np.array((3, 19, 19))
-    take a state as input, and return a position 
+    take a state as input, and return board updated, policy vector, player and boolean for game status
     """
 
     # hyperparameters: number of search, deepness of the search
     trials = 1600
-    deepness = 100
+    deepness = 5
 
     # get root node
     node = Node(get_max_children(board))
@@ -150,7 +139,18 @@ def turn(board):
     for _ in range(trials):
         mc_search(node, board, deepness - 1, player)
 
-    # get best move
-    x, y = policy(node, board, player)
+    # get array of score value, negative if black
+    p = node.get_policy()
+    p *= (1 - 2 * player)
 
-    return x, y
+    # get move with highest score value
+    n = np.argmax(p)
+    x, y = get_pos_on_board(board, n)
+
+    # update board
+    put_on_board(board, (x, y), player, 1)
+
+    # get game status (0 or 1)
+    e = evaluate(board, player, (x, y))
+
+    return board, p, player, e

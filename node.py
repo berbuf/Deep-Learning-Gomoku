@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+class node, implement a level of deepness in a certain path for the monte carlo tree search
+"""
+
 import numpy as np
 
 class Node(object):
