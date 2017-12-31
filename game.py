@@ -6,7 +6,8 @@ save labels (state, policy, winning) to file label_{num_game}.label
 """
 
 import numpy as np
-from mc_tree_search import turn
+from mc_tree_search import turn, expand
+from node import Node
 
 def save_tmp_label(board, p, player):
     """
@@ -45,8 +46,10 @@ def game(num_game):
     num_game: integer
     """
 
-    # init game board
+    # init game board, first node and player
     board = np.zeros((3, 19, 19), np.int8)
+    node = Node(0)
+    expand(node, board, 0)
     player = 1
 
     e = 0
@@ -55,7 +58,7 @@ def game(num_game):
         player ^= 1
 
         # run mcts simulation (p: array of scores, e: game has finished )
-        board, p, e = turn(board, player)
+        board, p, node, e = turn(board, player, node)
 
         # save board state, policy vector and current player in tmp folder
         save_tmp_label(board, p, player)

@@ -36,13 +36,6 @@ def get_pos_on_board(board, nb_child):
     # return x, y coordinates
     return pos % 19, pos // 19
 
-def get_max_children(board):
-    """
-    get number of possible actions: sum of non played tiles
-    """
-    complete_board = np.add(board[0], board[1])
-    return np.sum(complete_board == 0) - 1
-
 def evaluate(maps, player, pos):
     """
     give a score to the current state
@@ -77,7 +70,34 @@ def evaluate(maps, player, pos):
     #             return ??
     return 0
 
-def mc_search(node, board, deepness, player):
+
+def network(board):
+    """
+    tmp random function
+    """
+    return np.array([rd.randint(0, 20) for i in range(19 * 19)]), (rd.randint(0, 20) - 10) / 10
+
+def expand(node, board, player):
+    """
+    evaluate state, and predict probabilities using neural network
+    """
+
+    # update board for network
+    update_board_player(board, player)
+
+    # run network
+    p, v = network(board)
+
+    # filter p to keep only possible moves
+    p = p[np.where(np.add(board[0], board[1]).flatten() == 0)]
+
+    # create children
+    node.expand_children(p * (1 - 2 * player))
+
+    # return v (turn to negative if black)
+    return v * (1 - 2 * player)
+
+def mc_search(node, board, player):
     """
     node: object Node
     board: np.array(3,19,19)
@@ -86,72 +106,56 @@ def mc_search(node, board, deepness, player):
     do actions on a level of deepness
     """
 
-    update_board_player(board, player)
+    # get array of score value, negative if black, and choose best move
+    n = np.argmax(node.get_policy() * (1 - 2 * player))
+    child = node.get_child(n)
+    player ^= 1
 
-    # random move
-    nb_child = rd.randint(0, node.get_max_children())
-
-    """
-    eventually network policy head will give an array of probabilities
-    nb_child wil be chosen as follow => 
-    argmax ( for children c: Q ( score[c] ) + U ( prob[c] / 1 + frequency[c] ) )
-    """
-
-    # get child node and add frequency
-    child = node.get_child(nb_child)
+    # update frequency
     child.add_frequency()
 
-    # get coordinates of next move
-    x, y = get_pos_on_board(board, nb_child)
+    # get coordinates of next move, and update board
+    x, y = get_pos_on_board(board, n)
     put_on_board(board, (x, y), player, 1)
 
-    # get action value, negative if black
-    value = evaluate(board, player, (x, y))
-    value *= (1 - 2 * player)
+    # new node
+    if child.leaf():
+        value = evaluate(board, player, (x, y))
+        # if not a terminating move
+        if not value:
+            value = expand(child, board, player)
+    # keep searching
+    else:
+        value = mc_search(child, board, player)
 
-    """
-    here network value head will add its own value
-    """
-
-    if not value and deepness:
-        # recursive call
-        value += mc_search(child, board, deepness - 1, player ^ 1)
-
-    # clean board
+    # clean board and back propagate
     put_on_board(board, (x, y), player, 0)
-
-    node.score(value)
+    child.score(value)
     return value
 
-def turn(board, player):
+def turn(board, player, node):
     """
     board: np.array((3, 19, 19))
     take a state as input, and return board updated, policy vector, player and boolean for game status
     """
 
-    # hyperparameters: number of search, deepness of the search
-    trials = 1600
-    deepness = 3
-
-    # get root node
-    node = Node(get_max_children(board))
+    # parameters: number of search
+    trials = 1900
 
     # build tree
     for _ in range(trials):
-        mc_search(node, board, deepness - 1, player)
+        mc_search(node, board, player)
 
-    # get array of score value, negative if black
-    p = node.get_policy()
-    p *= (1 - 2 * player)
+    # get move with hghest frequency
+    n = node.get_max_frequency_move()
 
-    # get move with highest score value
-    n = np.argmax(p)
+    # get coordinates of chosen move, and update board
     x, y = get_pos_on_board(board, n)
-
-    # update board
     put_on_board(board, (x, y), player, 1)
 
-    # get game status (0 or 1)
-    e = evaluate(board, player, (x, y))
+    # get final policy and child
+    p = node.get_policy() * (1 - 2 * player)
+    child = node.get_child(n)
 
-    return board, p, e
+    # return updated board, policy, and game status (0 or 1)
+    return board, p, child, evaluate(board, player, (x, y))

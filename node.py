@@ -10,18 +10,30 @@ class Node(object):
     """
     node object
     """
-    def __init__(self, max_children):
+    def __init__(self, probability):
         """
         initialize object
         """
         self._value = 0
         self._frequency = 0
-        self._max_children = max_children
+        self._probability = probability
         self._children = dict()
+
+    def get_value(self):
+        """
+        getter
+        """
+        return self._value
+
+    def get_frequency(self):
+        """
+        getter
+        """
+        return self._frequency
 
     def score(self, value):
         """
-        update score
+        update value
         """
         self._value = value
 
@@ -31,31 +43,54 @@ class Node(object):
         """
         self._frequency += 1
 
-    def get_max_children(self):
+    def leaf(self):
         """
-        getter
+        check if node has been explored
         """
-        return self._max_children
-
-    def get_child(self, nb_child):
-        """
-        return existing child node or create it
-        """
-        if nb_child not in self._children :
-            self._children[nb_child] = Node(self._max_children - 1)
-        return self._children[nb_child]
+        return not any(self._children)
 
     def get_score(self):
         """
-        return value  / frequency
+        getter
         """
-        return self._value / self._frequency
+        return 0 if not self._frequency else self._value / self._frequency
+
+    def get_probability(self):
+        """
+        return probability / 1 + frequency
+        """
+        return self._probability / (1 + self._frequency)
 
     def get_policy(self):
         """
-        return array of children score 
+        return array of children value for Q + U
+        Q => value / frequency
+        U => probability / 1 + frequency
         """
-        return np.array([ node.get_score() for _, node in self._children.items() ])
+        return np.array([ node.get_score() + node.get_probability()
+                          for _, node in self._children.items() ])
+
+    def expand_children(self, p):
+        """
+        initialize children dict with array of probabilities
+        """
+        self._children = { n: Node(v) for n, v in enumerate(p) }
+
+    def get_child(self, nb_child):
+        """
+        return child node
+        """
+        return self._children[nb_child]
+
+    def get_max_frequency_move(self):
+        """
+        return max visited node
+        """
+        return np.argmax( [ node.get_frequency() for _, node in self._children.items() ] )
+
+    def debug(self):
+        print ( np.sum( [ node.get_frequency() for _, node in self._children.items() ] ) )
+        print ( [ node.get_frequency() for _, node in self._children.items() ] )
 
     def __str__(self):
         """
