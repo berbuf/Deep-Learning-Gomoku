@@ -1,7 +1,7 @@
  #!/usr/bin/env python3
 
 """
-play a game until the end
+play a game against oneself until the end
 save labels (state, policy, winning) to file label_{num_game}.label
 """
 
@@ -27,7 +27,7 @@ def print_board(board):
     """
     debug, print current map to term with colours
     """
-    board = np.add(board[0], board[1] * 2)
+    board = (board[:,:,:,0] + board[:,:,:,1] * 2)[0]
     print ("board:")
     for line in board:
         l = ""
@@ -40,33 +40,32 @@ def print_board(board):
                 l += "  "
         print (l)
 
-def game(num_game):
+def init_game(network):
+    """
+    init game board, first node, next player turn
+    """
+    node = Node(0)
+    board = np.zeros((1, 19, 19, 3), np.int8)
+    expand(node, board, 0, network)
+    return board, node, 0
+
+def game(network, num_game):
     """
     take identifier of a game and play it until the end
     num_game: integer
     """
-
-    # init game board, first node and player
-    board = np.zeros((3, 19, 19), np.int8)
-    node = Node(0)
-    expand(node, board, 0)
-    player = 1
-
-    e = 0
-    while (not e):
-        # next player
-        player ^= 1
-
-        # run mcts simulation (p: array of scores, e: game has finished )
-        board, p, node, e = turn(board, player, node)
-
+    board, root, player = init_game(network)
+    end = 0
+    while (not end):
+        # run mcts simulation: chosen move, new board, policy, new root, game status
+        _, board, p, root, end = turn(board, player, root, network)
         # save board state, policy vector and current player in tmp folder
         save_tmp_label(board, p, player)
-
+        # next player
+        player ^= 1
         # debug
         print_board(board)
 
-    print("end game", player + 1)
-
+    print("end game", (player ^ 1) + 1)
     # rewrite tmp file to num_game file with final winner info
     save_final_label(num_game, player)

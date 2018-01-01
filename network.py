@@ -2,10 +2,40 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 
+"""
+class Network
+"""
+
+class Network(object):
+    def __init__(self, version):
+        """
+        init network
+        """
+        self._state = tf.placeholder(tf.float32, shape=[1, 19, 19, 3])
+        p_head, v_head = network(self._state)
+        self._p_head = p_head
+        self._v_head = v_head
+        self._glob = tf.global_variables_initializer()
+        self._sess = tf.Session()
+        self._sess.run(self._glob)
+
+    def infer(self, board):
+        """
+        infer policy and value from board state
+        """
+        return self._sess.run([self._p_head, self._v_head],
+                              feed_dict={self._state: board})
+
+    def train(self):
+        """
+        train sequence
+        save trained model
+        """
+        return
+
 def convolution(input, filters, ksize):
     initializer = tf.contrib.layers.xavier_initializer()
     regularizer = tf.contrib.layers.l2_regularizer(1e-3)
-    # print(input)
     conv = tf.layers.conv2d(
         inputs=input,
         filters=filters,
@@ -36,7 +66,8 @@ def fully_connected(flatten_input, units):
 
 def conv_layer(input):
     """
-    Implementation of a convolutional layer with 256 filter (3x3), batch normalization and rectifier non linearity (reLU)
+    Implementation of a convolutional layer with 256 filter (3x3),
+    batch normalization and rectifier non linearity (reLU)
     """
 
     conv = convolution(input=input, filters=256, ksize=3)
@@ -44,7 +75,6 @@ def conv_layer(input):
     relu = tf.nn.relu(bn)
     return relu
 
-    
 def res_layer(input):
     """
     Implementation of a residual layer with 256 filter (3x3)
@@ -82,7 +112,7 @@ def policy_head(input):
     bn = tf.layers.batch_normalization(conv)
     relu = tf.nn.relu(bn)
     flatten = tf.reshape(relu, [-1, 19 * 19 * 2])
-    fc = fully_connected(flatten, units=19 * 19 + 1)
+    fc = fully_connected(flatten, units=19 * 19)
     return fc
 
 def network(input):
@@ -91,19 +121,19 @@ def network(input):
         layer = res_layer(layer)
     policy = policy_head(layer)
     value = value_head(layer)
-    return (policy, value)
+    return policy, value
 
+"""
 if __name__ == '__main__':
 
-    input = tf.constant(.0, shape=[1, 19, 19, 3])
-    policy, value = network(input)
-    print(policy)
-    print(value)
+    state = tf.constant(.0, shape=[1, 19, 19, 3])
+    policy, value = network(state)
 
+    print ("config graph")
     graph_location = './logs'
-    print('Saving graph to: %s' % graph_location)
     merged = tf.summary.merge_all()
     writer = tf.summary.FileWriter(graph_location)
 
     with tf.Session() as sess:
         writer.add_graph(sess.graph)
+"""

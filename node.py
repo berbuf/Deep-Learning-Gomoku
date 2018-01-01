@@ -89,6 +89,7 @@ class Node(object):
         return np.argmax( [ node.get_frequency() for _, node in self._children.items() ] )
 
     def debug(self):
+        print (len(self._children))
         print ( np.sum( [ node.get_frequency() for _, node in self._children.items() ] ) )
         print ( [ node.get_frequency() for _, node in self._children.items() ] )
 

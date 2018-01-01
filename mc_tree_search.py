@@ -10,37 +10,34 @@ import random as rd
 import math
 from node import Node
 
-WHITE = np.zeros((19, 19))
-BLACK = np.ones((19, 19))
-
 def update_board_player(board, player):
     """
     update third layer of board (white(0) => all zeros, black(1) => all ones)
     """
-    board[2] = WHITE if not player else BLACK
+    board[:,:,:,2] = player
 
 def put_on_board(board, pos, player, value):
     """
     act on board, with player (0, 1), at x, y with value (0, 1)
     """
-    board[player, pos[1], pos[0]] = value
+    board[0, pos[1], pos[0], player] = value
 
 def get_pos_on_board(board, nb_child):
     """
     take a number of children, and return x and y position on board 
     """
     # get unidimensional board of zero and one
-    complete_board = np.add(board[0], board[1]).flatten()
+    complete_board = (board[:,:,:,0] + board[:,:,:,1]).flatten()
     # get index of nb_child zero
     pos = (complete_board == 0).nonzero()[0][nb_child]
-    # return x, y coordinates
     return pos % 19, pos // 19
 
-def evaluate(maps, player, pos):
+def evaluate(board, player, pos):
     """
     give a score to the current state
     """
 
+    maps = [ board[:,:,:,0][0], board[:,:,:,1][0] ]
     pmap = maps[player]
 
     line = pmap[pos[0]] # get line at pos
@@ -70,92 +67,86 @@ def evaluate(maps, player, pos):
     #             return ??
     return 0
 
-
-def network(board):
+def tmpnetwork(board):
     """
     tmp random function
     """
-    return np.array([rd.randint(0, 20) for i in range(19 * 19)]), (rd.randint(0, 20) - 10) / 10
+    return (np.array([rd.randint(0, 20) for i in range(19 * 19)]),
+            (rd.randint(0, 20) - 10) / 10)
 
-def expand(node, board, player):
+def expand(node, board, player, network):
     """
-    evaluate state, and predict probabilities using neural network
+    expand node
+    predict state value, and probability for children using neural network
     """
-
-    # update board for network
     update_board_player(board, player)
-
-    # run network
-    p, v = network(board)
-
-    # filter p to keep only possible moves
-    p = p[np.where(np.add(board[0], board[1]).flatten() == 0)]
-
-    # create children
-    node.expand_children(p * (1 - 2 * player))
-
-    # return v (turn to negative if black)
-    return v * (1 - 2 * player)
-
-def mc_search(node, board, player):
+    # fast, random network
     """
-    node: object Node
-    board: np.array(3,19,19)
-    deepness: integer
-    player: 0 for white, 1 for black
-    do actions on a level of deepness
+    p, v = tmpnetwork(board)
+    p = p[np.where((board[:,:,:,0] + board[:,:,:,1]).flatten() == 0)] 
     """
+    # run network, (negative if black)
+    p, v = network.infer(board)
+    p = p[0][np.where((board[:,:,:,0] + board[:,:,:,1]).flatten() == 0)] 
+    p *= (1 - 2 * player)
+    v *= (1 - 2 * player)
+    node.expand_children(p)
+    return v
 
-    # get array of score value, negative if black, and choose best move
+def select(node, board, player):
+    """
+    return chosen node, updated board, new coordinates
+    """
+    # choose next node
     n = np.argmax(node.get_policy() * (1 - 2 * player))
     child = node.get_child(n)
-    player ^= 1
-
-    # update frequency
     child.add_frequency()
-
     # get coordinates of next move, and update board
     x, y = get_pos_on_board(board, n)
     put_on_board(board, (x, y), player, 1)
+    return child, board, x, y, player ^ 1
 
-    # new node
+def mc_search(node, board, player, network):
+    """
+    node: object Node
+    board: np.array(3,19,19)
+    player: 0 for white, 1 for black
+    do actions on a level of deepness
+    """
+    child, board, x, y, next_player = select(node, board, player)
+
+    # evaluate or keep searching
     if child.leaf():
-        value = evaluate(board, player, (x, y))
-        # if not a terminating move
+        value = evaluate(board, next_player, (x, y))
+        # if not a winning move 
         if not value:
-            value = expand(child, board, player)
-    # keep searching
+            value = expand(child, board, next_player, network)
     else:
-        value = mc_search(child, board, player)
+        value = mc_search(child, board, next_player, network)
 
     # clean board and back propagate
     put_on_board(board, (x, y), player, 0)
     child.score(value)
     return value
 
-def turn(board, player, node):
+def turn(board, player, root, network):
     """
     board: np.array((3, 19, 19))
-    take a state as input, and return board updated, policy vector, player and boolean for game status
+    take board, player turn (0, 1), root node
+    return next move, updated board, policy vector, next root and boolean for game status
     """
-
     # parameters: number of search
     trials = 1900
 
     # build tree
     for _ in range(trials):
-        mc_search(node, board, player)
+        mc_search(root, board, player, network)
 
-    # get move with hghest frequency
-    n = node.get_max_frequency_move()
+    n = root.get_max_frequency_move()
 
     # get coordinates of chosen move, and update board
     x, y = get_pos_on_board(board, n)
     put_on_board(board, (x, y), player, 1)
 
-    # get final policy and child
-    p = node.get_policy() * (1 - 2 * player)
-    child = node.get_child(n)
-
-    # return updated board, policy, and game status (0 or 1)
-    return board, p, child, evaluate(board, player, (x, y))
+    return ((x, y), board, root.get_policy() * (1 - 2 * player),
+            root.get_child(n), evaluate(board, player, (x, y)))

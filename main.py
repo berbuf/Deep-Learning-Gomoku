@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from game import game
+from reinforcement import game
+from network import Network
 import protocol
 import threading
 
@@ -14,19 +15,10 @@ class Thread(threading.Thread):
         while protocol.running[0]:
             self.protocol.nextCmd()
 
-if __name__ == '__main__':
-    # parameters
-    number_of_games = 1
-
-    for num_game in range(number_of_games):
-
-        # play a game until the end
-        game(num_game)
-
-        # train network
-        #train()
+def piskvork_game():
     """
-    # Piskvork
+    play gomoku game using trained model and piskvork interface
+    """
     board = np.zeros((3, 19, 19), np.int8)
     running = [1]
     protocol = protocol.Protocol(board, running)
@@ -58,4 +50,26 @@ if __name__ == '__main__':
         else:
             print("ERROR")
     thread.join()
+
+def reinforcement():
     """
+    train model against itself
+    """
+
+    # parameters
+    number_of_games = 1
+    network = Network(-1)
+
+    for num_game in range(number_of_games):
+        # play a game until the end
+        game(network, num_game)
+
+        # train network
+        network.train()
+
+if __name__ == '__main__':
+    # training
+    reinforcement()
+
+    # real game
+    #piskvork_game()
