@@ -57,7 +57,7 @@ class Node(object):
 
     def get_probability(self):
         """
-        return probability / 1 + frequency
+        return probability / (1 + frequency)
         """
         return self._probability / (1 + self._frequency)
 

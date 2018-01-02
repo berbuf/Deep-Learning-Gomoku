@@ -12,14 +12,14 @@ from node import Node
 def save_tmp_label(board, p, player):
     """
     append board, policy vector and current player to tmp file
-    format => np.array => ((3, 19, 19), 19 * 19, 1)
+    format => np.array => ((19, 19, 3), 19 * 19, 1)
     """
     return 
 
 def save_final_label(num, winner):
     """
     rewrite tmp file and change player to 1 if == winner, else -1
-    format => np.array => ((3, 19, 19), 19 * 19, 1)
+    format => np.array => ((19, 19, 3), 19 * 19, 1)
     """
     return 
 

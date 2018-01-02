@@ -15,6 +15,7 @@ class Network(object):
         p_head, v_head = network(self._state)
         self._p_head = p_head
         self._v_head = v_head
+        self._loss, self._p_mcts_placeholder, self._winner_placeholder = loss_function(self._state, self._p_head, self._v_head)
         self._glob = tf.global_variables_initializer()
         self._sess = tf.Session()
         self._sess.run(self._glob)
@@ -26,12 +27,17 @@ class Network(object):
         return self._sess.run([self._p_head, self._v_head],
                               feed_dict={self._state: board})
 
-    def train(self):
+    def train(self, board, p, z):
         """
         train sequence
         save trained model
+        board: current board
+        p: probability computed by mcts for board
+        z: winner of the game
         """
-        return
+        lr = 0.5
+        optimizer = tf.train.GradientDescentOptimizer(lr).minimize(self._loss)
+        self._sess.run([optimizer], feed_dict={self._state: board, self._p_mcts_placeholder: p, self._winner_placeholder: z})
 
 def convolution(input, filters, ksize):
     initializer = tf.contrib.layers.xavier_initializer()
@@ -123,6 +129,19 @@ def network(input):
     value = value_head(layer)
     return policy, value
 
+def loss_function(state, p_head, v_head):
+    
+    c = 0.01
+    p = tf.placeholder(tf.float32, [None, 19 * 19])
+    z = tf.placeholder(tf.float32, [None])
+
+    mean_square = tf.reduce_mean(tf.squared_difference(v_head, z))
+    cross_entropy = tf.reduce_mean(-tf.reduce_sum(p * tf.log(p_head), reduction_indices=[1]))
+
+    regularizer = tf.nn.l2_loss(state)
+    loss = mean_square + cross_entropy + c * regularizer
+    
+    return loss, p, z
 """
 if __name__ == '__main__':
 
