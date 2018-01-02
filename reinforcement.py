@@ -9,19 +9,32 @@ import numpy as np
 from mc_tree_search import turn, expand
 from node import Node
 
-def save_tmp_label(board, p, player):
+def save_tmp_label(turns, board, p, player):
     """
     append board, policy vector and current player to tmp file
-    format => np.array => ((19, 19, 3), 19 * 19, 1)
+    format => np.array => ((19, 19, 3), 19 * 19, 1) => 19, 19, 5
     """
-    return 
+    p.shape = (19,19)
+    save = np.insert(board, 3, p, axis=2)
+    player_layer = np.zeros((19, 19))
+    player_layer[0, 0] = player
+    save = np.insert(save, 4, p, axis=2)
+    turns.append(save)
 
-def save_final_label(num, winner):
+def save_final_label(turns, filename, winner):
     """
     rewrite tmp file and change player to 1 if == winner, else -1
-    format => np.array => ((19, 19, 3), 19 * 19, 1)
+    format => np.array => ((19, 19, 3), 19 * 19, 1) => 19, 19, 5
     """
-    return 
+    # turns.apply(lambda turn: turn[0, 0, 4] = 1 if turn[0, 0, 4] == winner else -1)
+    for i in range(len(turns)):
+        turns[i][0, 0, 4] = 1 if turns[i][0, 0, 4] == winner else -1
+    turns = np.array(turns)
+    if os.path.exists(filename):
+        old_turns = np.load(filename)
+        turns = np.append(old_turns, turns, axis=0)
+    np.save(filename, turns)
+
 
 def print_board(board):
     """
@@ -49,18 +62,20 @@ def init_game(network):
     expand(node, board, 0, network)
     return board, node, 0
 
-def game(network, num_game):
+def game(network, num_game, filename):
     """
     take identifier of a game and play it until the end
     num_game: integer
     """
+    turns = []
     board, root, player = init_game(network)
     end = 0
     while (not end):
         # run mcts simulation: chosen move, new board, policy, new root, game status
         _, board, p, root, end = turn(board, player, root, network)
-        # save board state, policy vector and current player in tmp folder
-        save_tmp_label(board, p, player)
+        # save board state, policy vector and current player in tmp folder (only if it is the new player)
+        if player == 1:
+            save_tmp_label(turns, board, p, player)
         # next player
         player ^= 1
         # debug
@@ -68,4 +83,4 @@ def game(network, num_game):
 
     print("end game", (player ^ 1) + 1)
     # rewrite tmp file to num_game file with final winner info
-    save_final_label(num_game, player)
+    save_final_label(turns, filename, player ^ 1)
