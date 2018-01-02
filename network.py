@@ -143,6 +143,7 @@ def loss_function(state, p_head, v_head):
     loss = mean_square + cross_entropy + c * regularizer
     
     return loss, p, z
+
 """
 if __name__ == '__main__':
 
