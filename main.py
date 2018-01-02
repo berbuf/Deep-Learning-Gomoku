@@ -65,7 +65,7 @@ def reinforcement():
         game(network, num_game)
 
         # train network
-        network.train()
+        # network.train()
 
 if __name__ == '__main__':
     # training
