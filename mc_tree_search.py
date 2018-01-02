@@ -81,13 +81,13 @@ def expand(node, board, player, network):
     """
     update_board_player(board, player)
     # fast, random network
-    """
     p, v = tmpnetwork(board)
     p = p[np.where((board[:,:,:,0] + board[:,:,:,1]).flatten() == 0)] 
-    """
     # run network, (negative if black)
+    """
     p, v = network.infer(board)
     p = p[0][np.where((board[:,:,:,0] + board[:,:,:,1]).flatten() == 0)] 
+    """
     p *= (1 - 2 * player)
     v *= (1 - 2 * player)
     node.expand_children(p)
@@ -97,6 +97,7 @@ def select(node, board, player):
     """
     return chosen node, updated board, new coordinates
     """
+    #    print (node.get_policy())
     # choose next node
     n = np.argmax(node.get_policy() * (1 - 2 * player))
     child = node.get_child(n)

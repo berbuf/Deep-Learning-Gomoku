@@ -11,6 +11,7 @@ class Network(object):
         """
         init network
         """
+        return
         self._state = tf.placeholder(tf.float32, shape=[1, 19, 19, 3])
         p_head, v_head = network(self._state)
         self._p_head = p_head
@@ -88,7 +89,7 @@ def res_layer(input):
     skip = tf.add(bn, input)
     relu = tf.nn.relu(skip)
     return relu
-    
+
 def value_head(input):
     """
     The value head

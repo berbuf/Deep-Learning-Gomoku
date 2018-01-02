@@ -58,14 +58,16 @@ def reinforcement():
 
     # parameters
     number_of_games = 1
-    network = Network(-1)
+    player_1 = Network(-1)
+    player_2 = Network(-1)
 
     for num_game in range(number_of_games):
         # play a game until the end
-        game(network, num_game)
+        game(player_1, player_2, num_game)
 
         # train network
-        network.train()
+        player_1.train()
+        #player_2.train()
 
 if __name__ == '__main__':
     # training
