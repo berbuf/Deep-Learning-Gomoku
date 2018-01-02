@@ -74,14 +74,11 @@ def test_winning_move_when_multiple():
 
         for y in range(19):
             for x in range(19):
-                if evaluate(board, 0, [y, x]):
-                    return True
-        for y in range(19):
-            for x in range(19):
-                if evaluate(board, 1, [y, x]):
+                if evaluate(board, has_winning_move - 1, [y, x]):
                     return True
 
         return False
+
 
 def test_winning_move_when_one():
     """
@@ -119,11 +116,7 @@ def test_winning_move_when_one():
 
         for y in range(19):
             for x in range(19):
-                if evaluate(board, 0, [y, x]):
-                    return True
-        for y in range(19):
-            for x in range(19):
-                if evaluate(board, 1, [y, x]):
+                if evaluate(board, has_winning_move - 1, [y, x]):
                     return True
 
         return False
@@ -165,14 +158,10 @@ def test_loosing_move():
 
         for y in range(19):
             for x in range(19):
-                if evaluate(board, 0, [y, x]):
-                    return True
-        for y in range(19):
-            for x in range(19):
-                if evaluate(board, 1, [y, x]):
-                    return True
+                if evaluate(board, 2 - has_winning_move, [y, x]):
+                    return False
 
-        return False
+        return True
 
 
 def main():
