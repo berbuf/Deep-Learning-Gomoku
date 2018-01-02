@@ -9,19 +9,32 @@ import numpy as np
 from mc_tree_search import turn, expand
 from node import Node
 
-def save_tmp_label(board, p, player):
+def save_tmp_label(turns, board, p, player):
     """
     append board, policy vector and current player to tmp file
-    format => np.array => ((19, 19, 3), 19 * 19, 1)
+    format => np.array => ((19, 19, 3), 19 * 19, 1) => 19, 19, 5
     """
-    return 
+    p.shape = (19,19)
+    save = np.insert(board, 3, p, axis=2)
+    player_layer = np.zeros((19, 19))
+    player_layer[0, 0] = player
+    save = np.insert(save, 4, p, axis=2)
+    turns.append(save)
 
-def save_final_label(num, winner):
+def save_final_label(turns, filename, winner):
     """
     rewrite tmp file and change player to 1 if == winner, else -1
-    format => np.array => ((19, 19, 3), 19 * 19, 1)
+    format => np.array => ((19, 19, 3), 19 * 19, 1) => 19, 19, 5
     """
-    return 
+    # turns.apply(lambda turn: turn[0, 0, 4] = 1 if turn[0, 0, 4] == winner else -1)
+    for i in range(len(turns)):
+        turns[i][0, 0, 4] = 1 if turns[i][0, 0, 4] == winner else -1
+    turns = np.array(turns)
+    if os.path.exists(filename):
+        old_turns = np.load(filename)
+        turns = np.append(old_turns, turns, axis=0)
+    np.save(filename, turns)
+
 
 def print_board(board):
     """
@@ -77,32 +90,29 @@ def turn_sequence(board, player, node_current, net_current, node_opponent, net_o
     pos, board, p, node_current, status = turn(board, player, node_current, net_current)
     # update opponent node with player choice
     node_opponent = update_turn(board, player ^ 1, node_opponent, net_opponent, pos)
-    if save:
-        save_tmp_label(board, p, player)
+    if save is not None:
+        save_tmp_label(save, board, p, player)
+
+    print_board(board)
+
     return status, node_current, node_opponent
 
-def game(network_1, network_2, num_game):
+def game(network_1, network_2, filename):
     """
     take identifier of a game and play it until the end
     num_game: integer
     """
     board, node_p_1, node_p_2 = init_game(network_1, network_2)
     
-    winner = 0
-    while (not winner):
+    turns = []
+    while (True):
 
-        status, node_p_1, node_p_2 = turn_sequence(board, 0, node_p_1, network_1, node_p_2, network_2, True)
+        status, node_p_1, node_p_2 = turn_sequence(board, 0, node_p_1, network_1, node_p_2, network_2, None)
         if status:
-            winner = 1
-            break
-        print_board(board)
+            save_final_label(turns, filename, 0)
+            return
 
-        status, node_p_2, node_p_1 = turn_sequence(board, 1, node_p_2, network_2, node_p_1, network_1, False)
+        status, node_p_2, node_p_1 = turn_sequence(board, 1, node_p_2, network_2, node_p_1, network_1, None)
         if status:
-            winner = 2
-        print_board(board)
-
-    print("end game", winner - 1)
-
-    # save board state, policy vector and current player in tmp folder
-    save_final_label(num_game, winner - 1)
+            save_final_label(turns, filename, 1)
+            return
