@@ -11,7 +11,6 @@ class Network(object):
         """
         init network
         """
-        return
         self._state = tf.placeholder(tf.float32, shape=[1, 19, 19, 3])
         p_head, v_head = network(self._state)
         self._p_head = p_head
