@@ -79,8 +79,8 @@ def reinforcement():
         network.train()
 
 if __name__ == '__main__':
-    # # training
-    # reinforcement()
+    # training
+    reinforcement()
 
     # real game
-    piskvork_game()
+    # piskvork_game()
