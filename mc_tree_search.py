@@ -35,26 +35,30 @@ def get_pos_on_board(board, nb_child):
 def evaluate(board, player, pos):
     """
     give a score to the current state
+    board => (19, 19, 3)
+    player => 0 or 1
+    pos => (x, y)
     """
     maps = [ board[:,:,0], board[:,:,1] ]
     pmap = maps[player]
-    line = pmap[pos[0]] # get line at pos
-    p = pos[1]
-    if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
-        return 1
 
-    line = pmap[:,pos[1]] # get column at pos
+    line = pmap[pos[1]] # get line at pos
     p = pos[0]
     if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
         return 1
 
-    line = pmap.diagonal(pos[1] - pos[0]) # get diagonal 1
+    line = pmap[:,pos[0]] # get column at pos
+    p = pos[1]
+    if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
+        return 1
+
+    line = pmap.diagonal(pos[0] - pos[1]) # get diagonal 1
     p = min(pos[0], pos[1])
     if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
         return 1
 
-    line = np.fliplr(pmap).diagonal(18 - pos[1] - pos[0]) # get diagonal 2
-    p = min(pos[0], 18 - pos[1])
+    line = np.fliplr(pmap).diagonal(18 - pos[0] - pos[1]) # get diagonal 2
+    p = min(pos[1], 18 - pos[0])
     if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
         return 1
 
@@ -69,8 +73,8 @@ def tmpnetwork(board):
     """
     tmp random function
     """
-    return (np.array([rd.randint(0, 1) for i in range(19 * 19)]),
-            (rd.randint(0, 20) - 10) / 10)
+
+    return (np.array( [ rd.randint(0, 10) / 10 for i in range(19 * 19) ] ), 0)
 
 def expand(node, board, player, network):
     """
@@ -97,11 +101,18 @@ def select(node, board, player):
     """
     # choose next node
     n = np.argmax(node.get_policy() * (1 - 2 * player))
+    #print (node.get_policy())
     child = node.get_child(n)
     child.add_frequency()
     # get coordinates of next move, and update board
     x, y = get_pos_on_board(board, n)
     put_on_board(board, (x, y), player, 1)
+#    if player == 1 and x == 1 and y == 0:
+#        print (node.get_policy())
+#    if player == 0:
+#        print (node.get_policy())
+#    if player == 1:
+#        print (node.get_policy())
     return child, board, x, y, player ^ 1
 
 def mc_search(node, board, player, network):
@@ -114,13 +125,12 @@ def mc_search(node, board, player, network):
     child, board, x, y, next_player = select(node, board, player)
     # evaluate or keep searching
     if child.leaf():
-        value = evaluate(board, next_player, (x, y))
-        # if not a winning move 
+        value = evaluate(board, player, (x, y))
+        # if not a winning move
         if not value:
             value = expand(child, board, next_player, network)
     else:
         value = mc_search(child, board, next_player, network)
-
     # clean board and back propagate
     put_on_board(board, (x, y), player, 0)
     child.score(value)
@@ -136,7 +146,7 @@ def turn(board, player, root, network):
     trials = 1900
 
     # build tree
-    for _ in range(trials):
+    for i in range(trials):
         mc_search(root, board, player, network)
 
     n = root.get_max_frequency_move()

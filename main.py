@@ -79,22 +79,24 @@ def reinforcement():
     """
 
     # parameters
+    version = "1.0"
+    path_label = "models/labels_" + version
     number_of_games = 1
     player_1 = Network(-1)
     player_2 = Network(-1)
 
     for num_game in range(number_of_games):
         # play a game until the end
-        game(player_1, player_2, "save.npz")
+        game(player_1, player_2, path_label)
 
         # trainning all 3 games (for example)
         if num_game % 1 == 0:
             # train network
-            train_from_file("save.npz", player_2)
+            train_from_file(path_label, player_2)
 
 if __name__ == '__main__':
     # training
-    # reinforcement()
+     reinforcement()
 
     # real game
-    piskvork_game()
+    #piskvork_game()

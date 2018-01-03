@@ -8,34 +8,28 @@ save labels (state, policy, winning) to file label_{num_game}.label
 import numpy as np
 from mc_tree_search import turn, expand
 from node import Node
+from unit_tests import conv_map
 import os
 
 def save_tmp_label(turns, board, p, player):
     """
     append board, policy vector and current player to tmp file
-    format => np.array => ((19, 19, 3), 19 * 19, 1)
     """
-    turns[0].append(board)
-    turns[1].append(p)
-    turns[2].append(player)
+    # shape: ( (19, 19, 3), (361), (1) )
+    turns.append((board, p, player))
 
 def save_final_label(turns, filename, winner):
     """
     rewrite tmp file and change player to 1 if == winner, else -1
     format => np.array => ((19, 19, 3), 19 * 19, 1) => 19, 19, 5
     """
-    # turns.apply(lambda turn: turn[0, 0, 4] = 1 if turn[0, 0, 4] == winner else -1)
-    for i in range(len(turns[2])):
-        turns[i] = 1 if turns[i] == winner else -1
-    turns[0] = np.array(turns[0])
-    turns[1] = np.array(turns[1])
-    turns[2] = np.array(turns[2])
-    if os.path.exists(filename):
-        old_array = np.load(filename)
-        turns[0] = np.append(old_array['boards'], turns[0], axis=0)
-        turns[1] = np.append(old_array['p'], turns[1], axis=0)
-        turns[2] = np.append(old_array['z'], turns[2], axis=0)
-    np.savez(filename, board=turns[0], p=turns[1], z=turns[2])
+    # change z value
+    turns = list(map(lambda x: (x[0], x[1], 1 if x[2] == winner else -1), turns))
+    # append to existing array
+    if os.path.exists(filename + ".npy"):
+        turns += list(np.load(filename + ".npy"))
+    # save to disk
+    np.save(filename, np.array(turns))
 
 def print_board(board):
     """
@@ -54,12 +48,35 @@ def print_board(board):
                 l += "  "
         print (l)
 
+def start_state():
+    return conv_map(np.array([[0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]))
+
 def init_game(network_1, network_2):
     """
     init game board, first node, next player turn
     """
-    # init board
-    board = np.zeros((19, 19, 3), np.int8)
+    # start with blank map
+    #board = np.zeros((19, 19, 3), np.int8)
+    # init board with given state
+    board = start_state()
     # init player 1 tree
     node_p_1 = Node(0)
     expand(node_p_1, board, 0, network_1)
@@ -81,39 +98,39 @@ def update_turn(board, player, node, network, pos):
         expand(child, board, player, network)
     return child
 
-def turn_sequence(board, player, node_current, net_current, node_opponent, net_opponent, save):
+def sequence(board, player, p_node, p_net, o_node, o_net, labels):
     """
     perform a complete turn
     take state info, player objects, and save boolean
     return game status (O, 1), updated current and opponent nodes
     """
     # run mcts simulation: return pos move, new board, policy p, new node, game status
-    pos, board, p, node_current, status = turn(board, player, node_current, net_current)
+    pos, board, p, p_node, status = turn(board, player, p_node, p_net)
     # update opponent node with player choice
-    node_opponent = update_turn(board, player ^ 1, node_opponent, net_opponent, pos)
-    if save is not None:
-        save_tmp_label(save, board, p, player)
+    o_node = update_turn(board, player ^ 1, o_node, o_net, pos)
+    if labels is not None:
+        save_tmp_label(labels, board, p, player)
 
     print_board(board)
 
-    return status, node_current, node_opponent
+    return status, p_node, o_node
 
-def game(network_1, network_2, filename):
+def game(net_1, net_2, filename):
     """
     take identifier of a game and play it until the end
     num_game: integer
     """
-    board, node_p_1, node_p_2 = init_game(network_1, network_2)
+    board, p_1, p_2 = init_game(net_1, net_2)
 
-    turns = ([], [], [])
+    labels = []
     while (True):
 
-        status, node_p_1, node_p_2 = turn_sequence(board, 0, node_p_1, network_1, node_p_2, network_2, turns)
+        status, p_1, p_2 = sequence(board, 0, p_1, net_1, p_2, net_2, labels)
         if status:
-            save_final_label(turns, filename, 0)
+            save_final_label(labels, filename, 0)
             return
 
-        status, node_p_2, node_p_1 = turn_sequence(board, 1, node_p_2, network_2, node_p_1, network_1, turns)
+        status, p_2, p_1 = sequence(board, 1, p_2, net_2, p_1, net_1, None)
         if status:
-            save_final_label(turns, filename, 1)
+            save_final_label(labels, filename, 1)
             return
