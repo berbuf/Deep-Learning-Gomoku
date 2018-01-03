@@ -1,3 +1,4 @@
+import mc_tree_search
 
 class Protocol:
     def __init__(self, b, r):
@@ -39,7 +40,11 @@ class Protocol:
                 moves.append(pos)
             lastMove = 0
             for move in moves:
-                self.board[0][move[1]][move[0]] = move[2]
+                x = move[0];
+                y = move[1];
+                player = move[2] % 2; # map 2 -> 0 and 1 -> 1
+                put_on_board(self.board, (x, y), player, 0)
+                # self.board[0][move[1]][move[0]] = move[2]
                 print("DEBUG", "Player", move[2], ":", move[0], move[1])
                 lastMove = move[2]
             if lastMove == 2:
