@@ -69,7 +69,7 @@ def tmpnetwork(board):
     """
     tmp random function
     """
-    return (np.array([rd.randint(0, 20) for i in range(19 * 19)]),
+    return (np.array([rd.randint(0, 1) for i in range(19 * 19)]),
             (rd.randint(0, 20) - 10) / 10)
 
 def expand(node, board, player, network):
@@ -95,7 +95,6 @@ def select(node, board, player):
     """
     return chosen node, updated board, new coordinates
     """
-    #    print (node.get_policy())
     # choose next node
     n = np.argmax(node.get_policy() * (1 - 2 * player))
     child = node.get_child(n)

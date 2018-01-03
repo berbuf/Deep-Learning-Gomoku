@@ -37,7 +37,6 @@ def save_final_label(turns, filename, winner):
         turns[2] = np.append(old_array['z'], turns[2], axis=0)
     np.savez(filename, board=turns[0], p=turns[1], z=turns[2])
 
-
 def print_board(board):
     """
     debug, print current map to term with colours
@@ -105,7 +104,7 @@ def game(network_1, network_2, filename):
     num_game: integer
     """
     board, node_p_1, node_p_2 = init_game(network_1, network_2)
-    
+
     turns = ([], [], [])
     while (True):
 
