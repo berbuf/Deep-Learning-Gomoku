@@ -11,11 +11,11 @@ class Network(object):
         """
         init network
         """
-        self._state = tf.placeholder(tf.float32, shape=[1, 19, 19, 3])
+        self._state = tf.placeholder(tf.float32, shape=[None, 19, 19, 3])
         p_head, v_head = network(self._state)
         self._p_head = p_head
         self._v_head = v_head
-        self._loss, self._p_mcts_placeholder, self._winner_placeholder = loss_function(self._state, self._p_head, self._v_head)
+        self._loss, self._train_p_mcts, self._train_winner = loss_function(self._state, self._p_head, self._v_head)
         self._glob = tf.global_variables_initializer()
         self._sess = tf.Session()
         self._sess.run(self._glob)
@@ -25,7 +25,7 @@ class Network(object):
         infer policy and value from board state
         """
         return self._sess.run([self._p_head, self._v_head],
-                              feed_dict={self._state: board})
+                              feed_dict={self._state: board[None, :]})
 
     def train(self, board, p, z):
         """
@@ -37,7 +37,7 @@ class Network(object):
         """
         lr = 0.5
         optimizer = tf.train.GradientDescentOptimizer(lr).minimize(self._loss)
-        self._sess.run([optimizer], feed_dict={self._state: board, self._p_mcts_placeholder: p, self._winner_placeholder: z})
+        self._sess.run([optimizer], feed_dict={self._train_state: board, self._train_p_mcts: p, self._train_winner: z})
 
 def convolution(input, filters, ksize):
     initializer = tf.contrib.layers.xavier_initializer()

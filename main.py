@@ -52,16 +52,16 @@ def piskvork_game():
             print("ERROR")
     thread.join()
 
-def train_from_file(filename, network):
-
+def load_nparray(filename):
     if os.path.exists(filename):
-        turns = np.load(filename)
-        for turn in turns:
-            state = np.delete(turn, [3, 4], axis=2)
-            p = turn[:, :, 3]
-            z = turn[0, 0, 4]
-            p.shape = (19 * 19)
-            network.train(state, p, z)
+        array = np.load(filename)
+        os.remove(filename)
+        return array
+
+def train_from_file(filename, network):
+    if os.path.exists(filename):
+        array = np.load(filename)
+        network.train(array['boards'], array['p'], array['z'])
         os.remove(filename)
 
 def reinforcement():
@@ -76,12 +76,12 @@ def reinforcement():
 
     for num_game in range(number_of_games):
         # play a game until the end
-        game(player_1, player_2, "save.npy")
+        game(player_1, player_2, "save.npz")
 
         # trainning all 3 games (for example)
-        if num_game % 3 == 0:
+        if num_game % 1 == 0:
             # train network
-            train_from_file("save.npy", network)
+            train_from_file("save.npz", player_2)
 
 if __name__ == '__main__':
     # training

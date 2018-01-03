@@ -14,20 +14,20 @@ def update_board_player(board, player):
     """
     update third layer of board (white(0) => all zeros, black(1) => all ones)
     """
-    board[:,:,:,2] = player
+    board[:,:,2] = player
 
 def put_on_board(board, pos, player, value):
     """
     act on board, with player (0, 1), at x, y with value (0, 1)
     """
-    board[0, pos[1], pos[0], player] = value
+    board[pos[1], pos[0], player] = value
 
 def get_pos_on_board(board, nb_child):
     """
     take a number of children, and return x and y position on board 
     """
     # get unidimensional board of zero and one
-    complete_board = (board[:,:,:,0] + board[:,:,:,1]).flatten()
+    complete_board = (board[:,:,0] + board[:,:,1]).flatten()
     # get index of nb_child zero
     pos = (complete_board == 0).nonzero()[0][nb_child]
     return pos % 19, pos // 19
@@ -36,10 +36,8 @@ def evaluate(board, player, pos):
     """
     give a score to the current state
     """
-
-    maps = [ board[:,:,:,0][0], board[:,:,:,1][0] ]
+    maps = [ board[:,:,0], board[:,:,1] ]
     pmap = maps[player]
-
     line = pmap[pos[0]] # get line at pos
     p = pos[1]
     if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
@@ -82,11 +80,11 @@ def expand(node, board, player, network):
     update_board_player(board, player)
     # fast, random network
     p, v = tmpnetwork(board)
-    p = p[np.where((board[:,:,:,0] + board[:,:,:,1]).flatten() == 0)] 
+    p = p[np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)] 
     # run network, (negative if black)
     """
     p, v = network.infer(board)
-    p = p[0][np.where((board[:,:,:,0] + board[:,:,:,1]).flatten() == 0)] 
+    p = p[0][np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)] 
     """
     p *= (1 - 2 * player)
     v *= (1 - 2 * player)
@@ -115,7 +113,6 @@ def mc_search(node, board, player, network):
     do actions on a level of deepness
     """
     child, board, x, y, next_player = select(node, board, player)
-
     # evaluate or keep searching
     if child.leaf():
         value = evaluate(board, next_player, (x, y))
