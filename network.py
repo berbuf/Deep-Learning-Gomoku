@@ -11,10 +11,11 @@ class Network(object):
         """
         init network
         """
-        self._state = tf.placeholder(tf.float32, shape=[1, 19, 19, 3])
+        self._state = tf.placeholder(tf.float32, shape=[None, 19, 19, 3])
         p_head, v_head = network(self._state)
         self._p_head = p_head
         self._v_head = v_head
+        self._loss, self._train_p_mcts, self._train_winner = loss_function(self._state, self._p_head, self._v_head)
         self._glob = tf.global_variables_initializer()
         self._sess = tf.Session()
         self._sess.run(self._glob)
@@ -24,14 +25,19 @@ class Network(object):
         infer policy and value from board state
         """
         return self._sess.run([self._p_head, self._v_head],
-                              feed_dict={self._state: board})
+                              feed_dict={self._state: board[None, :]})
 
-    def train(self):
+    def train(self, board, p, z):
         """
         train sequence
         save trained model
+        board: current board
+        p: probability computed by mcts for board
+        z: winner of the game
         """
-        return
+        lr = 0.5
+        optimizer = tf.train.GradientDescentOptimizer(lr).minimize(self._loss)
+        self._sess.run([optimizer], feed_dict={self._train_state: board, self._train_p_mcts: p, self._train_winner: z})
 
 def convolution(input, filters, ksize):
     initializer = tf.contrib.layers.xavier_initializer()
@@ -88,7 +94,7 @@ def res_layer(input):
     skip = tf.add(bn, input)
     relu = tf.nn.relu(skip)
     return relu
-    
+
 def value_head(input):
     """
     The value head
@@ -122,6 +128,20 @@ def network(input):
     policy = policy_head(layer)
     value = value_head(layer)
     return policy, value
+
+def loss_function(state, p_head, v_head):
+    
+    c = 0.01
+    p = tf.placeholder(tf.float32, [None, 19 * 19])
+    z = tf.placeholder(tf.float32, [None])
+
+    mean_square = tf.reduce_mean(tf.squared_difference(v_head, z))
+    cross_entropy = tf.reduce_mean(-tf.reduce_sum(p * tf.log(p_head), reduction_indices=[1]))
+
+    regularizer = tf.nn.l2_loss(state)
+    loss = mean_square + cross_entropy + c * regularizer
+    
+    return loss, p, z
 
 """
 if __name__ == '__main__':

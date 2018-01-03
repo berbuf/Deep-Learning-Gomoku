@@ -7,6 +7,7 @@ import mc_tree_search
 from protocol import Protocol
 from node import Node
 import threading
+import os
 
 class Thread(threading.Thread):
     def __init__(self, protocol):
@@ -62,6 +63,18 @@ def piskvork_game():
             print("ERROR")
     thread.join()
 
+def load_nparray(filename):
+    if os.path.exists(filename):
+        array = np.load(filename)
+        os.remove(filename)
+        return array
+
+def train_from_file(filename, network):
+    if os.path.exists(filename):
+        array = np.load(filename)
+        network.train(array['boards'], array['p'], array['z'])
+        os.remove(filename)
+
 def reinforcement():
     """
     train model against itself
@@ -69,14 +82,17 @@ def reinforcement():
 
     # parameters
     number_of_games = 1
-    network = Network(-1)
+    player_1 = Network(-1)
+    player_2 = Network(-1)
 
     for num_game in range(number_of_games):
         # play a game until the end
-        game(network, num_game)
+        game(player_1, player_2, "save.npz")
 
-        # train network
-        network.train()
+        # trainning all 3 games (for example)
+        if num_game % 1 == 0:
+            # train network
+            train_from_file("save.npz", player_2)
 
 if __name__ == '__main__':
     # training
