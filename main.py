@@ -19,17 +19,17 @@ class Thread(threading.Thread):
             self.protocol.nextCmd()
 
 def play_turn(board, player, network):
-    # ADD OWN TURN CALCULATION
+    print("DEBUG", "Calculating the next move")
     node = mc_tree_search.Node(0)
     mc_tree_search.expand(node, board, 0, network)
     (x, y), _, _, _, _ = mc_tree_search.turn(board, player, node, network)
-    print(x + "," + y)
+    print("%d,%d" % (int(x), int(y)))
 
 def piskvork_game():
     """
     play gomoku game using trained model and piskvork interface
     """
-    board = np.zeros((1, 19, 19, 3), np.int8)
+    board = np.zeros((19, 19, 3), np.int8)
     running = [1]
     protocol = Protocol(board, running)
     thread = Thread(protocol)
@@ -53,10 +53,8 @@ def piskvork_game():
                 mc_tree_search.put_on_board(board, (x, y), player ^ 1, 0)
             except:
                 print("ERROR")
-            print("DEBUG", "Calculating the next move")
             play_turn(board, player, network)
         elif cmd == "begin":
-            print("DEBUG", "Calculating the next move")
             play_turn(board, player, network)
             pass
         else:
@@ -96,7 +94,7 @@ def reinforcement():
 
 if __name__ == '__main__':
     # training
-    reinforcement()
+    # reinforcement()
 
     # real game
-    # piskvork_game()
+    piskvork_game()
