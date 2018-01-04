@@ -35,7 +35,7 @@ class Node(object):
         """
         update value
         """
-        self._value = value
+        self._value += value
 
     def add_frequency(self):
         """
@@ -70,6 +70,12 @@ class Node(object):
         return np.array([ node.get_score() + node.get_probability()
                           for _, node in self._children.items() ])
 
+    def get_q_vector(self):
+        """
+        return an array of each child q value
+        """
+        return np.array( [ node.get_score() for _, node in self._children.items() ] )
+
     def expand_children(self, p):
         """
         initialize children dict with array of probabilities
@@ -89,12 +95,14 @@ class Node(object):
         return np.argmax( [ node.get_frequency() for _, node in self._children.items() ] )
 
     def debug(self):
+        print ( [ node.get_frequency() for _, node in self._children.items() ] )
+        
+        return
         print ("score")
         print ( [ node.get_score() for _, node in self._children.items() ] )
         print ("len children")
         print (len(self._children))
         print ( np.sum( [ node.get_frequency() for _, node in self._children.items() ] ) )
-        print ( [ node.get_frequency() for _, node in self._children.items() ] )
 
     def __str__(self):
         """

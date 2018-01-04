@@ -73,8 +73,8 @@ def tmpnetwork(board):
     """
     tmp random function
     """
-
-    return (np.array( [ rd.randint(0, 10) / 10 for i in range(19 * 19) ] ), 0)
+    return (np.array( [ 1.5 for i in range(19 * 19) ] ), 0)
+    #return (np.array( [ rd.randint(0, 10) / 10 for i in range(19 * 19) ] ), 0)
 
 def expand(node, board, player, network):
     """
@@ -136,6 +136,14 @@ def mc_search(node, board, player, network):
     child.score(value)
     return value
 
+def final_policy(root, board, player):
+    """
+    return policy label
+    """
+    p = np.ones(361) - (board[:,:,0] + board[:,:,1]).flatten()
+    p[ p == 1 ] = root.get_policy() * (1 - 2 * player)
+    return p
+
 def turn(board, player, root, network):
     """
     board: np.array((3, 19, 19))
@@ -149,11 +157,11 @@ def turn(board, player, root, network):
     for i in range(trials):
         mc_search(root, board, player, network)
 
-    n = root.get_max_frequency_move()
+    p = final_policy(root, board, player)
 
     # get coordinates of chosen move, and update board
+    n = root.get_max_frequency_move()
     x, y = get_pos_on_board(board, n)
     put_on_board(board, (x, y), player, 1)
 
-    return ((x, y), board, root.get_policy() * (1 - 2 * player),
-            root.get_child(n), evaluate(board, player, (x, y)))
+    return ((x, y), board, p, root.get_child(n), evaluate(board, player, (x, y)))

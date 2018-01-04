@@ -88,11 +88,12 @@ def reinforcement():
     for num_game in range(number_of_games):
         # play a game until the end
         game(player_1, player_2, path_label)
-        trainning all 3 games (for example)
-        #if num_game % 1 == 0:
+        """
+        #trainning all 3 games (for example)
+        if num_game % 1 == 0:
             # train network
             train_from_file(path_label, player_2)
-
+        """
 if __name__ == '__main__':
     # training
      reinforcement()
