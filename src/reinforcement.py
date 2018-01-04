@@ -3,13 +3,15 @@
 """
 play a game against oneself until the end
 save labels (state, policy, winning) to file label_{num_game}.label
+train network from batches of labels
 """
 
-import numpy as np
-from mc_tree_search import turn, expand
-from node import Node
-from unit_tests import conv_map
 import os
+import numpy as np
+from mcts import mcts, expand
+from node import Node
+from network import Network
+from utils_board import init_map, print_board
 
 def save_tmp_label(turns, board, p, player):
     """
@@ -31,52 +33,32 @@ def save_final_label(turns, filename, winner):
     # save to disk
     np.save(filename, np.array(turns))
 
-def print_board(board):
+def load_nparray(filename):
     """
-    debug, print current map to term with colours
+    load labels from file
     """
-    board = (board[:,:,0] + board[:,:,1] * 2)
-    print ("board:")
-    for line in board:
-        l = ""
-        for tile in line:
-            if tile == 1:
-                l += "\033[34;10m" + str(tile) + "\033[0m "
-            elif tile == 2:
-                l += "\033[31;10m" + str(tile) + "\033[0m "
-            else:
-                l += "  "
-        print (l)
+    if os.path.exists(filename):
+        array = np.load(filename)
+        os.remove(filename)
+        return array
 
-def start_state():
-    return conv_map(np.array([[0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]))
+def train_from_file(filename, network):
+    """
+    train network once
+    """
+    if os.path.exists(filename):
+        array = np.load(filename)
+        network.train(array['boards'], array['p'], array['z'])
+        os.remove(filename)
 
 def init_game(network_1, network_2):
     """
     init game board, first node, next player turn
     """
     # start with blank map
-    #board = np.zeros((19, 19, 3), np.int8)
-    # init board with given state
-    board = start_state()
+    # board = np.zeros((19, 19, 3), np.int8)
+    # or init board with given state
+    board = init_map()
     # init player 1 tree
     node_p_1 = Node(0)
     expand(node_p_1, board, 0, network_1)
@@ -105,14 +87,13 @@ def sequence(board, player, p_node, p_net, o_node, o_net, labels):
     return game status (O, 1), updated current and opponent nodes
     """
     # run mcts simulation: return pos move, new board, policy p, new node, game status
-    pos, board, p, p_node, status = turn(board, player, p_node, p_net)
+    pos, board, p, p_node, status = mcts(board, player, p_node, p_net)
     # update opponent node with player choice
     o_node = update_turn(board, player ^ 1, o_node, o_net, pos)
     if labels is not None:
         save_tmp_label(labels, board, p, player)
-
+    # debug
     print_board(board)
-
     return status, p_node, o_node
 
 def game(net_1, net_2, filename):
@@ -121,16 +102,39 @@ def game(net_1, net_2, filename):
     num_game: integer
     """
     board, p_1, p_2 = init_game(net_1, net_2)
-
     labels = []
-    while (True):
 
+    while (True):
         status, p_1, p_2 = sequence(board, 0, p_1, net_1, p_2, net_2, labels)
         if status:
             save_final_label(labels, filename, 0)
-            return
+            break
 
         status, p_2, p_1 = sequence(board, 1, p_2, net_2, p_1, net_1, None)
         if status:
             save_final_label(labels, filename, 1)
-            return
+            break
+
+def reinforcement():
+    """
+    train model against itself
+    """
+    # parameters
+    version = "1.0"
+    path_label = "../labels/labels_" + version + ".npy"
+    number_of_games = 1
+
+    player_1 = Network(-1)
+    player_2 = Network(-1)
+
+    for num_game in range(number_of_games):
+
+        # play a game until the end
+        game(player_1, player_2, path_label)
+
+        """
+        #trainning all 3 games (for example)
+        if num_game % 1 == 0:
+            # train network
+            train_from_file(path_label, player_2)
+        """

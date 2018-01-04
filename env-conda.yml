@@ -1,0 +1,13 @@
+name: drl_gomoku
+channels:
+    - https://conda.anaconda.org/menpo
+    - conda-forge
+dependencies:
+    - python==3.5.2
+    - numpy
+    - jupyter
+    - tqdm
+    - python==3.5.2
+    - jupyter
+    - pip:
+    - tensorflow-gpu==1.2.1

@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 
+"""
+implementation of piskvork protocl
+piskvork is a program made for gomoku tournament
+"""
+
 import numpy as np
-from reinforcement import game
-from network import Network
-import mc_tree_search
-from protocol import Protocol
-from node import Node
 import threading
 import os
+from mcts import mcts, expand
+from protocol import Protocol
+from node import Node
 
 class Thread(threading.Thread):
     def __init__(self, protocol):
@@ -20,9 +23,9 @@ class Thread(threading.Thread):
 
 def play_turn(board, player, network):
     print("DEBUG", "Calculating the next move")
-    node = mc_tree_search.Node(0)
-    mc_tree_search.expand(node, board, 0, network)
-    (x, y), _, _, _, _ = mc_tree_search.turn(board, player, node, network)
+    node = Node(0)
+    expand(node, board, player, network)
+    (x, y), _, _, _, _ = mcts(board, player, node, network)
     print("%d,%d" % (int(x), int(y)))
 
 def piskvork_game():
@@ -60,43 +63,3 @@ def piskvork_game():
         else:
             print("ERROR")
     thread.join()
-
-def load_nparray(filename):
-    if os.path.exists(filename):
-        array = np.load(filename)
-        os.remove(filename)
-        return array
-
-def train_from_file(filename, network):
-    if os.path.exists(filename):
-        array = np.load(filename)
-        network.train(array['boards'], array['p'], array['z'])
-        os.remove(filename)
-
-def reinforcement():
-    """
-    train model against itself
-    """
-
-    # parameters
-    version = "1.0"
-    path_label = "labels/labels_" + version + ".npy"
-    number_of_games = 1
-    player_1 = Network(-1)
-    player_2 = Network(-1)
-
-    for num_game in range(number_of_games):
-        # play a game until the end
-        game(player_1, player_2, path_label)
-        """
-        #trainning all 3 games (for example)
-        if num_game % 1 == 0:
-            # train network
-            train_from_file(path_label, player_2)
-        """
-if __name__ == '__main__':
-    # training
-     reinforcement()
-
-    # real game
-    #piskvork_game()
