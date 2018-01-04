@@ -80,7 +80,7 @@ def reinforcement():
 
     # parameters
     version = "1.0"
-    path_label = "models/labels_" + version
+    path_label = "labels/labels_" + version + ".npy"
     number_of_games = 1
     player_1 = Network(-1)
     player_2 = Network(-1)
@@ -88,9 +88,8 @@ def reinforcement():
     for num_game in range(number_of_games):
         # play a game until the end
         game(player_1, player_2, path_label)
-
-        # trainning all 3 games (for example)
-        if num_game % 1 == 0:
+        trainning all 3 games (for example)
+        #if num_game % 1 == 0:
             # train network
             train_from_file(path_label, player_2)
 

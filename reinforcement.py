@@ -26,8 +26,8 @@ def save_final_label(turns, filename, winner):
     # change z value
     turns = list(map(lambda x: (x[0], x[1], 1 if x[2] == winner else -1), turns))
     # append to existing array
-    if os.path.exists(filename + ".npy"):
-        turns += list(np.load(filename + ".npy"))
+    if os.path.exists(filename):
+        turns += list(np.load(filename))
     # save to disk
     np.save(filename, np.array(turns))
 
