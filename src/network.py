@@ -35,6 +35,9 @@ class Network(object):
         p: probability computed by mcts for board
         z: winner of the game
         """
+        board = np.array(board.tolist())
+        p = np.array(p.tolist())
+        z = np.array(z.tolist())
         lr = 0.5
         optimizer = tf.train.GradientDescentOptimizer(lr).minimize(self._loss)
         self._sess.run([optimizer],
