@@ -83,13 +83,14 @@ def expand(node, board, player, network):
     """
     update_board_player(board, player)
     # fast, random network
+    """
     p, v = tmpnetwork(board)
     p = p[np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)] 
     # run network, (negative if black)
     """
     p, v = network.infer(board)
     p = p[0][np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)] 
-    """
+
     p *= (1 - 2 * player)
     v *= (1 - 2 * player)
     node.expand_children(p)
@@ -143,7 +144,7 @@ def turn(board, player, root, network):
     return next move, updated board, policy vector, next root and boolean for game status
     """
     # parameters: number of search
-    trials = 1900
+    trials = 5
 
     # build tree
     for i in range(trials):

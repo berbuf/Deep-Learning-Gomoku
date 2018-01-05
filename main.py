@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+ #!/usr/bin/env python3
 
 import numpy as np
 from reinforcement import game
@@ -79,19 +79,22 @@ def reinforcement():
     """
 
     # parameters
-    version = "1.0"
-    path_label = "labels/labels_" + version + ".npy"
+    version_p1 = "1.0"
+    version_p2 = "2.0"
+    path_label = "labels/labels_" + version_p1 + ".npy"
     number_of_games = 1
-    player_1 = Network(-1)
-    player_2 = Network(-1)
+    player_1 = Network(version_p1)
+    player_2 = Network(version_p2)
 
     for num_game in range(number_of_games):
         # play a game until the end
         game(player_1, player_2, path_label)
-        trainning all 3 games (for example)
-        #if num_game % 1 == 0:
+        #trainning all 3 games (for example)
+        if num_game % 1 == 0:
             # train network
             train_from_file(path_label, player_2)
+    player_1.save_session()
+    player_2.save_session()
 
 if __name__ == '__main__':
     # training

@@ -1,6 +1,6 @@
+import os.path
 import tensorflow as tf
 import numpy as np
-from tqdm import tqdm
 
 """
 class Network
@@ -11,14 +11,21 @@ class Network(object):
         """
         init network
         """
-        return
-        self._state = tf.placeholder(tf.float32, shape=[None, 19, 19, 3])
-        p_head, v_head = network(self._state)
-        self._p_head = p_head
-        self._v_head = v_head
-        self._loss, self._train_p_mcts, self._train_winner = loss_function(self._state, self._p_head, self._v_head)
-        self._glob = tf.global_variables_initializer()
-        self._sess = tf.Session()
+
+        path_to_restore_model = "models/model-" + version + ".ckpt";
+        self.version = version
+
+        if os.path.isfile(path_to_restore_model):
+            saver = tf.train.Saver()
+            saver.restore(self._sess, "models/model-" + version + ".ckpt")
+        else:
+            self._state = tf.placeholder(tf.float32, shape=[None, 19, 19, 3])
+            p_head, v_head = network(self._state)
+            self._p_head = p_head
+            self._v_head = v_head
+            self._loss, self._train_p_mcts, self._train_winner = loss_function(self._state, self._p_head, self._v_head)
+            self._glob = tf.global_variables_initializer()
+            self._sess = tf.Session()
         self._sess.run(self._glob)
 
     def infer(self, board):
@@ -27,6 +34,12 @@ class Network(object):
         """
         return self._sess.run([self._p_head, self._v_head],
                               feed_dict={self._state: board[None, :]})
+
+    def save_session(self):
+        saver = tf.train.Saver()
+        saver_path = saver.save(self._sess, "models/model-" + self.version + ".ckpt")
+        print("model saved in %s" %saver_path)
+        return
 
     def train(self, board, p, z):
         """
@@ -131,7 +144,7 @@ def network(input):
     return policy, value
 
 def loss_function(state, p_head, v_head):
-    
+
     c = 0.01
     p = tf.placeholder(tf.float32, [None, 19 * 19])
     z = tf.placeholder(tf.float32, [None])
@@ -141,7 +154,7 @@ def loss_function(state, p_head, v_head):
 
     regularizer = tf.nn.l2_loss(state)
     loss = mean_square + cross_entropy + c * regularizer
-    
+
     return loss, p, z
 
 """
