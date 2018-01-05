@@ -66,7 +66,7 @@ def sequence(board, player, p_node, p_net, o_node, o_net, labels):
     pos, board, p, p_node, status = mcts(board, player, p_node, p_net)
     o_node = update_turn(board, player ^ 1, o_node, o_net, pos)
     save_tmp_label(labels, board, p, player)
-    # print_board(board)
+    print_board(board)
     return status, p_node, o_node
 
 def game(net_1, net_2):

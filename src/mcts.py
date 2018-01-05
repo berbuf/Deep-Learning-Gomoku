@@ -48,13 +48,13 @@ def expand(node, board, player, network):
     """
     update_board_player(board, player)
     # dummy values
-    p, v = (np.array( [ 1.5 for i in range(19 * 19) ] ), 0)
-    p = p[np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)] 
-    # run network (time consuming), (negative if black)
     """
+    p, v = (np.array( [ 1.5 for i in range(19 * 19) ] ), 0)
+    p = p[np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)]
+    """
+    # run network (time consuming), (negative if black)
     p, v = network.infer(board)
     p = p[0][np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)] 
-    """
     p *= (1 - 2 * player)
     v *= (1 - 2 * player)
     node.expand_children(p)
@@ -89,7 +89,7 @@ def search(node, board, player, network):
         if not value:
             value = expand(child, board, next_player, network)
     else:
-        value = mc_search(child, board, next_player, network)
+        value = search(child, board, next_player, network)
     # clean board and back propagate
     put_on_board(board, (x, y), player, 0)
     child.score(value)
