@@ -121,14 +121,15 @@ def training(number_training, version, trainee):
     path_label = "../labels/labels_" + str(version) + ".npy"
     for i in range(number_training):
         print(i, end=" ", flush=True)
-        train_from_file(path_label, trainee)
+        #train_from_file(path_label, trainee)
 
-def evaluation(number_games, champion, trainee):
+def evaluation(number_games, version, trainee):
     """
-    take number_games, champion and trainee
+    take number_games, version and trainee
     return percentage of victory after n games
     """
     win = 0
+    champion = Network(version)
     for i in range(number_games):
         print(i, end=" ", flush=True)
         _, winner = game(trainee, champion)
