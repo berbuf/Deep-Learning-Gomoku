@@ -36,6 +36,9 @@ def conv_map(m):
     return np.array( [ list(zip(la, lb, c)) for la, lb in zip(p1, p2) ], np.int8 )
 
 def init_map():
+    """
+    easy to configure state
+    """
     return conv_map(np.array([[0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                               [0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                               [0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

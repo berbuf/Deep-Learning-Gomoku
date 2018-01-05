@@ -8,6 +8,7 @@ train network from batches of labels
 
 import os
 import numpy as np
+import random as rd
 from mcts import mcts, expand
 from node import Node
 from network import Network
@@ -28,24 +29,6 @@ def save_final_label(turns, winner, filename):
     if os.path.exists(filename):
         turns += list(np.load(filename))
     np.save(filename, np.array(turns))
-
-def load_nparray(filename):
-    """
-    load labels from file
-    """
-    if os.path.exists(filename):
-        array = np.load(filename)
-        os.remove(filename)
-        return array
-
-def train_from_file(filename, network):
-    """
-    train network once
-    """
-    if os.path.exists(filename):
-        labels = np.load(filename)
-        network.train(labels[:,0], labels[:,1], labels[:,2])
-        #os.remove(filename)
 
 def init_game(network_1, network_2):
     """
@@ -113,16 +96,6 @@ def self_play(number_games, version):
         tmp_labels, winner = game(player_1, player_2)
         save_final_label(tmp_labels, winner, path_label)
 
-def training(number_training, version, trainee):
-    """
-    take number_training, version and trainee
-    train on label
-    """
-    path_label = "../labels/labels_" + str(version) + ".npy"
-    for i in range(number_training):
-        print(i, end=" ", flush=True)
-        #train_from_file(path_label, trainee)
-
 def evaluation(number_games, version, trainee):
     """
     take number_games, version and trainee
@@ -143,16 +116,60 @@ def clone(version):
     """
     return Network(version), version + 1, 
 
+def random_rotation(s, p, z):
+    """
+    apply random rotation on label
+    """
+    r = rd.randint(0, 3)
+    s[:,:,0] = np.rot90(s[:,:,0], r, (0, 1))
+    s[:,:,1] = np.rot90(s[:,:,1], r, (0, 1))
+    p = np.rot90(p.reshape((19, 19)), r, (0, 1)).flatten()
+    return (s, p, z)
+
+def get_training_labels(version, size):
+    """
+    size labels from the most recent ones
+    """
+    labels = []
+    while (len(labels) < size and version > 0):
+        labels += list(np.load("../labels/labels_" + str(version) + ".npy"))
+        version -= 1
+    return labels
+
+def training(number_training, batch_size, size_train_labels, version, trainee):
+    """
+    take number_training, version and trainee
+    train on label
+    """
+    labels = get_training_labels(version, size_train_labels)
+    for i in range(number_training):
+        print(i, end=" ", flush=True)
+
+        # random batch
+        batch = rd.sample(list(labels), min(batch_size, len(labels)))
+    
+        # random transformation
+        batch = [ random_rotation(s, p, z) for s, p, z in batch ] 
+
+        # training
+        batch = np.array(batch)
+        trainee.train(batch[:,0], batch[:,1], batch[:,2])
+
+    del labels
+
 def reinforcement():
     """
     train model against itself
     """
-    number_games = 1
-    number_training = 1
-    number_evaluation = 1
+    number_games = 2
+    number_training = 2
+    number_evaluation = 2
+    batch_size = 2048
+    size_train_labels = 500000
 
-    trainee = Network(1)
-    version = 1
+    # get champiion version
+    version = len(os.listdir("../labels/")) - 1
+    trainee = Network(version)
 
     while (True):
         # produce labels from best version
@@ -161,7 +178,7 @@ def reinforcement():
 
         # cloned trainee learns from labels
         print ("\ntraining, number_training:", number_training, "version:", version)
-        training(number_training, version, trainee)
+        training(number_training, batch_size, size_train_labels, version, trainee)
 
         # if trainee beats champion, trainee becomes champion, new trainee is cloned from it
         print ("\nevaluation, number_evaluation:", number_evaluation)
