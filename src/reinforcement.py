@@ -134,7 +134,7 @@ def training(number_training, batch_size, size_train_labels, version, trainee):
         print(i, end=" ", flush=True)
 
         # random batch
-        batch = rd.sample(list(labels), min(batch_size, len(labels)))
+        batch = rd.sample(labels, min(batch_size, len(labels)))
     
         # random transformation
         batch = [ random_rotation(s, p, z) for s, p, z in batch ] 

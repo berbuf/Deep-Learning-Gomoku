@@ -58,7 +58,6 @@ def expand(node, board, player, network):
     p = p[0][np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)] 
     # normalize
     p /= max(np.max(p), abs(np.min(p)))
-    print (p)
     # negative if black
     p *= (1 - 2 * player)
     v *= (1 - 2 * player)
@@ -106,7 +105,7 @@ def mcts(board, player, root, network):
     return next move, updated board, policy vector, next root and boolean for game status
     """
     # parameters: number of search
-    trials = 1
+    trials = 160
 
     # build tree
     for _ in range(trials):
