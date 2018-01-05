@@ -78,24 +78,24 @@ def fully_connected(flatten_input, units):
 
 def conv_layer(input):
     """
-    Implementation of a convolutional layer with 256 filter (3x3),
+    Implementation of a convolutional layer with 64 filter (3x3),
     batch normalization and rectifier non linearity (reLU)
     """
 
-    conv = convolution(input=input, filters=256, ksize=3)
+    conv = convolution(input=input, filters=64, ksize=3)
     bn = tf.layers.batch_normalization(conv)
     relu = tf.nn.relu(bn)
     return relu
 
 def res_layer(input):
     """
-    Implementation of a residual layer with 256 filter (3x3)
+    Implementation of a residual layer with 64 filter (3x3)
     """
 
-    conv = convolution(input=input, filters=256, ksize=3)
+    conv = convolution(input=input, filters=64, ksize=3)
     bn = tf.layers.batch_normalization(conv)
     relu = tf.nn.relu(bn)
-    conv = convolution(input=relu, filters=256, ksize=3)
+    conv = convolution(input=relu, filters=64, ksize=3)
     bn = tf.layers.batch_normalization(conv)
     skip = tf.add(bn, input)
     relu = tf.nn.relu(skip)
@@ -125,11 +125,12 @@ def policy_head(input):
     relu = tf.nn.relu(bn)
     flatten = tf.reshape(relu, [-1, 19 * 19 * 2])
     fc = fully_connected(flatten, units=19 * 19)
-    return fc
+    tanh = tf.nn.tanh(fc)
+    return tanh
 
 def network(input):
     layer = conv_layer(input)
-    for _ in range(20):
+    for _ in range(16):
         layer = res_layer(layer)
     policy = policy_head(layer)
     value = value_head(layer)

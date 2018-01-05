@@ -55,9 +55,7 @@ def expand(node, board, player, network):
     """
     p, v = network.infer(board)
     # remove already played tiles 
-    p = p[0][np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)] 
-    # normalize
-    p /= max(np.max(p), abs(np.min(p)))
+    p = p[0][np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)]
     # negative if black
     p *= (1 - 2 * player)
     v *= (1 - 2 * player)
