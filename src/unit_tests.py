@@ -40,7 +40,6 @@ def test_evaluate_graphic():
             print()
     pass
 
-
 def test_winning_move_when_multiple():
     """
     test if network find winning move among many
@@ -79,7 +78,6 @@ def test_winning_move_when_multiple():
                     return True
 
         return False
-
 
 def test_winning_move_when_one():
     """
@@ -121,7 +119,6 @@ def test_winning_move_when_one():
                     return True
 
         return False
-
 
 def test_loosing_move():
     """
@@ -168,7 +165,7 @@ def basic_win():
     """
     test with simple env
     """
-    e = np.array([[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    e = np.array([[0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -190,6 +187,9 @@ def basic_win():
     board = conv_map(e)
     player = 0
     pos = (0, 0)
+    root = Node(0)
+    net = Network(-1)
+
     return evaluate(board, player, pos)
 
 def main():

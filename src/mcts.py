@@ -51,10 +51,15 @@ def expand(node, board, player, network):
     """
     p, v = (np.array( [ 1.5 for i in range(19 * 19) ] ), 0)
     p = p[np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)]
+    # run network (time consuming)
     """
-    # run network (time consuming), (negative if black)
     p, v = network.infer(board)
+    # remove already played tiles 
     p = p[0][np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)] 
+    # normalize
+    p /= max(np.max(p), abs(np.min(p)))
+    print (p)
+    # negative if black
     p *= (1 - 2 * player)
     v *= (1 - 2 * player)
     node.expand_children(p)
@@ -66,13 +71,12 @@ def select(node, board, player):
     """
     # choose next node
     n = np.argmax(node.get_policy() * (1 - 2 * player))
-    #print (node.get_policy())
     child = node.get_child(n)
     child.add_frequency()
     # get coordinates of next move, and update board
     x, y = get_pos_on_board(board, n)
     put_on_board(board, (x, y), player, 1)
-    return child, board, x, y, player ^ 1
+    return child, board, (x, y), player ^ 1
 
 def search(node, board, player, network):
     """
@@ -81,17 +85,17 @@ def search(node, board, player, network):
     player: 0 for white, 1 for black
     do actions on a level of deepness
     """
-    child, board, x, y, next_player = select(node, board, player)
+    child, board, pos, next_player = select(node, board, player)
     # evaluate or keep searching
     if child.leaf():
-        value = evaluate(board, player, (x, y))
+        value = evaluate(board, player, pos)
         # if not a winning move
         if not value:
             value = expand(child, board, next_player, network)
     else:
         value = search(child, board, next_player, network)
     # clean board and back propagate
-    put_on_board(board, (x, y), player, 0)
+    put_on_board(board, pos, player, 0)
     child.score(value)
     return value
 
@@ -102,7 +106,7 @@ def mcts(board, player, root, network):
     return next move, updated board, policy vector, next root and boolean for game status
     """
     # parameters: number of search
-    trials = 1600
+    trials = 1
 
     # build tree
     for _ in range(trials):
