@@ -84,38 +84,6 @@ def game(net_1, net_2):
         if status:
             return labels, 1
 
-def self_play(number_games, version):
-    """
-    take number_games version, and produce labels 
-    """
-    path_label = "../labels/labels_" + str(version) + ".npy"
-    player_1 = Network(version)
-    player_2 = Network(version)
-    for i in range(number_games):
-        print(i, end=" ", flush=True)
-        tmp_labels, winner = game(player_1, player_2)
-        save_final_label(tmp_labels, winner, path_label)
-
-def evaluation(number_games, version, trainee):
-    """
-    take number_games, version and trainee
-    return percentage of victory after n games
-    """
-    win = 0
-    champion = Network(version)
-    for i in range(number_games):
-        print(i, end=" ", flush=True)
-        _, winner = game(trainee, champion)
-        win += winner
-    return win / number_games * 100
-
-def clone(version):
-    """
-    take version number and duplicate weights as version + 1
-    return new trainee and version + 1
-    """
-    return Network(version), version + 1, 
-
 def random_rotation(s, p, z):
     """
     apply random rotation on label
@@ -135,6 +103,26 @@ def get_training_labels(version, size):
         labels += list(np.load("../labels/labels_" + str(version) + ".npy"))
         version -= 1
     return labels
+
+def clone(version):
+    """
+    take version number and duplicate weights as version + 1
+    return new trainee and version + 1
+    """
+    return Network(version), version + 1, 
+
+def evaluation(number_games, version, trainee):
+    """
+    take number_games, version and trainee
+    return percentage of victory after n games
+    """
+    win = 0
+    champion = Network(version)
+    for i in range(number_games):
+        print(i, end=" ", flush=True)
+        _, winner = game(trainee, champion)
+        win += winner
+    return win / number_games * 100
 
 def training(number_training, batch_size, size_train_labels, version, trainee):
     """
@@ -157,6 +145,18 @@ def training(number_training, batch_size, size_train_labels, version, trainee):
 
     del labels
 
+def self_play(number_games, version):
+    """
+    take number_games version, and produce labels 
+    """
+    path_label = "../labels/labels_" + str(version) + ".npy"
+    player_1 = Network(version)
+    player_2 = Network(version)
+    for i in range(number_games):
+        print(i, end=" ", flush=True)
+        tmp_labels, winner = game(player_1, player_2)
+        save_final_label(tmp_labels, winner, path_label)
+
 def reinforcement():
     """
     train model against itself
@@ -167,7 +167,7 @@ def reinforcement():
     batch_size = 2048
     size_train_labels = 500000
 
-    # get champiion version
+    # get champion version
     version = len(os.listdir("../labels/")) - 1
     trainee = Network(version)
 
