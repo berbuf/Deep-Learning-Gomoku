@@ -12,7 +12,8 @@ class Network(object):
         init network
         """
         self._state = tf.placeholder(tf.float32, shape=[None, 19, 19, 3])
-        self._p_head, self._v_head = network(self._state)
+        self._training = tf.placeholder(tf.bool)
+        self._p_head, self._v_head = network(self._state, self._training)
         self._loss, self._train_p_mcts, self._train_winner = loss_function(self._state,
                                                                            self._p_head,
                                                                            self._v_head)
@@ -25,7 +26,7 @@ class Network(object):
         infer policy and value from board state
         """
         return self._sess.run([self._p_head, self._v_head],
-                              feed_dict={self._state: board[None, :]})
+                              feed_dict={self._state: board[None, :], self._training: False})
 
     def train(self, board, p, z):
         """
@@ -43,7 +44,8 @@ class Network(object):
         self._sess.run([optimizer],
                        feed_dict={self._state: board,
                                   self._train_p_mcts: p,
-                                  self._train_winner: z})
+                                  self._train_winner: z,
+                                  self._training: True})
 
 def convolution(input, filters, ksize):
     initializer = tf.contrib.layers.xavier_initializer()
@@ -76,37 +78,37 @@ def fully_connected(flatten_input, units):
         bias_regularizer=regularizer)
     return fc
 
-def conv_layer(input):
+def conv_layer(input, training):
     """
     Implementation of a convolutional layer with 64 filter (3x3),
     batch normalization and rectifier non linearity (reLU)
     """
 
     conv = convolution(input=input, filters=64, ksize=3)
-    bn = tf.layers.batch_normalization(conv)
+    bn = tf.layers.batch_normalization(conv, training=training)
     relu = tf.nn.relu(bn)
     return relu
 
-def res_layer(input):
+def res_layer(input, training):
     """
     Implementation of a residual layer with 64 filter (3x3)
     """
 
     conv = convolution(input=input, filters=64, ksize=3)
-    bn = tf.layers.batch_normalization(conv)
+    bn = tf.layers.batch_normalization(conv, training=training)
     relu = tf.nn.relu(bn)
     conv = convolution(input=relu, filters=64, ksize=3)
-    bn = tf.layers.batch_normalization(conv)
+    bn = tf.layers.batch_normalization(conv, training=training)
     skip = tf.add(bn, input)
     relu = tf.nn.relu(skip)
     return relu
 
-def value_head(input):
+def value_head(input, training):
     """
     The value head
     """
     conv = convolution(input=input, filters=1, ksize=1)
-    bn = tf.layers.batch_normalization(conv)
+    bn = tf.layers.batch_normalization(conv, training=training)
     relu = tf.nn.relu(bn)
     flatten = tf.reshape(relu, [-1, 19 * 19 * 1])
     fc = fully_connected(flatten, units=256)
@@ -116,24 +118,24 @@ def value_head(input):
     output = tanh[:, 0]
     return output
 
-def policy_head(input):
+def policy_head(input, training):
     """
     The policy head
     """
     conv = convolution(input=input, filters=2, ksize=1)
-    bn = tf.layers.batch_normalization(conv)
+    bn = tf.layers.batch_normalization(conv, training=training)
     relu = tf.nn.relu(bn)
     flatten = tf.reshape(relu, [-1, 19 * 19 * 2])
     fc = fully_connected(flatten, units=19 * 19)
     tanh = tf.nn.tanh(fc)
     return tanh
 
-def network(input):
-    layer = conv_layer(input)
+def network(input, training):
+    layer = conv_layer(input, training)
     for _ in range(16):
-        layer = res_layer(layer)
-    policy = policy_head(layer)
-    value = value_head(layer)
+        layer = res_layer(layer, training)
+    policy = policy_head(layer, training)
+    value = value_head(layer, training)
     return policy, value
 
 def loss_function(state, p_head, v_head):
