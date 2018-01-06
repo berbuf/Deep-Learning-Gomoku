@@ -11,21 +11,21 @@ class Network(object):
         """
         init network
         """
-
-        path_to_restore_model = "models/model-" + version + ".ckpt";
+        path_to_restore_model = "../models/model-" + str(version) + ".ckpt";
         self.version = version
 
         if os.path.isfile(path_to_restore_model):
             saver = tf.train.Saver()
-            saver.restore(self._sess, "models/model-" + version + ".ckpt")
+            saver.restore(self._sess, path_to_restore_model)
         else:
             self._state = tf.placeholder(tf.float32, shape=[None, 19, 19, 3])
-            p_head, v_head = network(self._state)
-            self._p_head = p_head
-            self._v_head = v_head
-            self._loss, self._train_p_mcts, self._train_winner = loss_function(self._state, self._p_head, self._v_head)
+            self._p_head, self._v_head = network(self._state)
+            self._loss, self._train_p_mcts, self._train_winner = loss_function(self._state,
+                                                                               self._p_head,
+                                                                               self._v_head)
             self._glob = tf.global_variables_initializer()
             self._sess = tf.Session()
+
         self._sess.run(self._glob)
 
     def infer(self, board):
@@ -37,7 +37,7 @@ class Network(object):
 
     def save_session(self):
         saver = tf.train.Saver()
-        saver_path = saver.save(self._sess, "models/model-" + self.version + ".ckpt")
+        saver_path = saver.save(self._sess, "../models/model-" + str(self.version) + ".ckpt")
         print("model saved in %s" %saver_path)
         return
 
@@ -49,9 +49,15 @@ class Network(object):
         p: probability computed by mcts for board
         z: winner of the game
         """
+        board = np.array(board.tolist())
+        p = np.array(p.tolist())
+        z = np.array(z.tolist())
         lr = 0.5
         optimizer = tf.train.GradientDescentOptimizer(lr).minimize(self._loss)
-        self._sess.run([optimizer], feed_dict={self._train_state: board, self._train_p_mcts: p, self._train_winner: z})
+        self._sess.run([optimizer],
+                       feed_dict={self._state: board,
+                                  self._train_p_mcts: p,
+                                  self._train_winner: z})
 
 def convolution(input, filters, ksize):
     initializer = tf.contrib.layers.xavier_initializer()
@@ -86,24 +92,24 @@ def fully_connected(flatten_input, units):
 
 def conv_layer(input):
     """
-    Implementation of a convolutional layer with 256 filter (3x3),
+    Implementation of a convolutional layer with 64 filter (3x3),
     batch normalization and rectifier non linearity (reLU)
     """
 
-    conv = convolution(input=input, filters=256, ksize=3)
+    conv = convolution(input=input, filters=64, ksize=3)
     bn = tf.layers.batch_normalization(conv)
     relu = tf.nn.relu(bn)
     return relu
 
 def res_layer(input):
     """
-    Implementation of a residual layer with 256 filter (3x3)
+    Implementation of a residual layer with 64 filter (3x3)
     """
 
-    conv = convolution(input=input, filters=256, ksize=3)
+    conv = convolution(input=input, filters=64, ksize=3)
     bn = tf.layers.batch_normalization(conv)
     relu = tf.nn.relu(bn)
-    conv = convolution(input=relu, filters=256, ksize=3)
+    conv = convolution(input=relu, filters=64, ksize=3)
     bn = tf.layers.batch_normalization(conv)
     skip = tf.add(bn, input)
     relu = tf.nn.relu(skip)
@@ -133,11 +139,12 @@ def policy_head(input):
     relu = tf.nn.relu(bn)
     flatten = tf.reshape(relu, [-1, 19 * 19 * 2])
     fc = fully_connected(flatten, units=19 * 19)
-    return fc
+    tanh = tf.nn.tanh(fc)
+    return tanh
 
 def network(input):
     layer = conv_layer(input)
-    for _ in range(20):
+    for _ in range(16):
         layer = res_layer(layer)
     policy = policy_head(layer)
     value = value_head(layer)

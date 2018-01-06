@@ -1,4 +1,4 @@
-import mc_tree_search
+import mcts
 
 class Protocol:
     def __init__(self, b, r):

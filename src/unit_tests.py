@@ -1,21 +1,10 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from mc_tree_search import evaluate, expand, turn
+from mcts import evaluate, expand, mcts
 from network import Network
 from node import Node
-
-def conv_map(m):
-    """
-    convert test map to shape (19, 19, 3)
-    """
-    p1 = np.copy(m)
-    np.place(p1, p1 == 2, 0)
-    p2 = np.copy(m)
-    np.place(p2, p2 == 1, 0)
-    np.place(p2, p2 == 2, 1)
-    c = np.zeros(19) if np.sum( p1 ) == np.sum( p2 ) else np.ones(19) 
-    return np.array( [ list(zip(la, lb, c)) for la, lb in zip(p1, p2) ], np.int8 )
+from utils_board import conv_map
 
 def test_evaluate_graphic():
     """
@@ -51,7 +40,6 @@ def test_evaluate_graphic():
             print()
     pass
 
-
 def test_winning_move_when_multiple():
     """
     test if network find winning move among many
@@ -82,7 +70,7 @@ def test_winning_move_when_multiple():
         node = Node(0)
         expand(node, board, has_winning_move - 1, network)
 
-        turn(board, has_winning_move - 1, node, network)
+        mcts(board, has_winning_move - 1, node, network)
 
         for y in range(19):
             for x in range(19):
@@ -90,7 +78,6 @@ def test_winning_move_when_multiple():
                     return True
 
         return False
-
 
 def test_winning_move_when_one():
     """
@@ -132,7 +119,6 @@ def test_winning_move_when_one():
                     return True
 
         return False
-
 
 def test_loosing_move():
     """
@@ -179,8 +165,7 @@ def basic_win():
     """
     test with simple env
     """
-
-    e = np.array([[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    e = np.array([[0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -199,21 +184,12 @@ def basic_win():
                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-
     board = conv_map(e)
     player = 0
     pos = (0, 0)
-    """
-    p_1 = Node(0)
-    n_1 =  Network(-1)
-    expand(p_1, board, 0, n_1)
+    root = Node(0)
+    net = Network(-1)
 
-    p_1.debug()
-    pos, board, p, a_1, status = turn(board, player, p_1, n_1)
-    p_1.debug()
-    print (p)
-    #pos, board, p, n_1, status = turn(board, player ^ 1, p_1, n_1)
-    """
     return evaluate(board, player, pos)
 
 def main():
@@ -222,7 +198,6 @@ def main():
     assert(test_winning_move_when_one())
     assert(test_loosing_move())
     pass
-
 
 if __name__ ==  '__main__':
     main()
