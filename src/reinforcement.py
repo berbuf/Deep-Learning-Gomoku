@@ -170,7 +170,7 @@ def reinforcement():
     size_train_labels = 50000
 
     # get champion version
-    version = len(os.listdir("../labels/")) - 1
+    version = len(os.listdir("../labels/"))
     trainee = Network(version)
 
     while (True):
