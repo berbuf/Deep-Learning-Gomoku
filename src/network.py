@@ -37,7 +37,7 @@ class Network(object):
         infer policy and value from board state
         """
         return self._sess.run([self._p_head, self._v_head],
-                              feed_dict={self._state: board[None, :]})
+                              feed_dict={self._state: board[None, :], self._training: False})
 
     def save_session(self):
         with self._graph.as_default():
@@ -95,7 +95,7 @@ def fully_connected(flatten_input, units):
         bias_regularizer=regularizer)
     return fc
 
-def conv_layer(input):
+def conv_layer(input, training):
     """
     Implementation of a convolutional layer with 64 filter (3x3),
     batch normalization and rectifier non linearity (reLU)
@@ -120,8 +120,7 @@ def res_layer(input, id):
         skip = tf.add(bn, input)
         relu = tf.nn.relu(skip)
         return relu
-
-def value_head(input):
+def value_head(input, training):
     """
     The value head
     """
@@ -138,7 +137,7 @@ def value_head(input):
         output = tanh[:, 0]
         return output
 
-def policy_head(input):
+def policy_head(input, training):
     """
     The policy head
     """
