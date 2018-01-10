@@ -23,9 +23,9 @@ class Network(object):
             with self._graph.as_default():
                 self._state = tf.placeholder(tf.float32, shape=[None, 19, 19, 3])
                 self._p_head, self._v_head = network(self._state)
-                self._loss, self._train_p_mcts, self._train_winner = loss_function(self._state,
-                                                                                   self._p_head,
-                                                                                   self._v_head)
+                self._optimizer, self._loss, self._train_p_mcts, self._train_winner = loss_function(self._state,
+                                                                                                     self._p_head,
+                                                                                                     self._v_head)
                 self._glob = tf.global_variables_initializer()
                 self._sess = tf.Session(graph=self._graph)
                 self._sess.run(self._glob)
@@ -54,15 +54,15 @@ class Network(object):
         p: probability computed by mcts for board
         z: winner of the game
         """
-        board = np.array(board.tolist())
-        p = np.array(p.tolist())
-        z = np.array(z.tolist())
-        lr = 0.5
-        optimizer = tf.train.GradientDescentOptimizer(lr).minimize(self._loss)
-        self._sess.run([optimizer],
-                       feed_dict={self._state: board,
-                                  self._train_p_mcts: p,
-                                  self._train_winner: z})
+        with self._graph.as_default():
+            board = np.array(board.tolist())
+            p = np.array(p.tolist())
+            z = np.array(z.tolist())
+            print("m")
+            self._sess.run([self._optimizer],
+                           feed_dict={self._state: board,
+                                      self._train_p_mcts: p,
+                                      self._train_winner: z})
 
 def convolution(input, filters, ksize):
     initializer = tf.contrib.layers.xavier_initializer()
@@ -166,14 +166,16 @@ def loss_function(state, p_head, v_head):
         c = 0.01
         p = tf.placeholder(tf.float32, [None, 19 * 19])
         z = tf.placeholder(tf.float32, [None])
+        lr = 0.5
 
         mean_square = tf.reduce_mean(tf.squared_difference(v_head, z))
         cross_entropy = tf.reduce_mean(-tf.reduce_sum(p * tf.log(p_head), reduction_indices=[1]))
 
         regularizer = tf.nn.l2_loss(state)
         loss = mean_square + cross_entropy + c * regularizer
+        optimizer = tf.train.GradientDescentOptimizer(lr).minimize(loss)
 
-        return loss, p, z
+        return optimizer, loss, p, z
 
 """
 if __name__ == '__main__':
