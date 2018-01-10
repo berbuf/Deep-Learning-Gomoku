@@ -109,7 +109,7 @@ def clone(version):
     take version number and duplicate weights as version + 1
     return new trainee and version + 1
     """
-    return Network(version), version + 1, 
+    return Network(version), version + 1,
 
 def evaluation(number_games, version, trainee):
     """
@@ -135,9 +135,9 @@ def training(number_training, batch_size, size_train_labels, version, trainee):
 
         # random batch
         batch = rd.sample(labels, min(batch_size, len(labels)))
-    
+
         # random transformation
-        batch = [ random_rotation(s, p, z) for s, p, z in batch ] 
+        batch = [ random_rotation(s, p, z) for s, p, z in batch ]
 
         # training
         batch = np.array(batch)
@@ -147,7 +147,7 @@ def training(number_training, batch_size, size_train_labels, version, trainee):
 
 def self_play(number_games, version):
     """
-    take number_games version, and produce labels 
+    take number_games version, and produce labels
     """
     path_label = "../labels/labels_" + str(version) + ".npy"
     player_1 = Network(version)
@@ -156,6 +156,8 @@ def self_play(number_games, version):
         print(i, end=" ", flush=True)
         tmp_labels, winner = game(player_1, player_2)
         save_final_label(tmp_labels, winner, path_label)
+    player_1.save_session()
+    player_2.save_session()
 
 def reinforcement():
     """

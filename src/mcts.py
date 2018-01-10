@@ -54,7 +54,7 @@ def expand(node, board, player, network):
     # run network (time consuming)
     """
     p, v = network.infer(board)
-    # remove already played tiles 
+    # remove already played tiles
     p = p[0][np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)]
     # negative if black
     p *= (1 - 2 * player)
@@ -103,7 +103,7 @@ def mcts(board, player, root, network):
     return next move, updated board, policy vector, next root and boolean for game status
     """
     # parameters: number of search
-    trials = 160
+    trials = 5
 
     # build tree
     for _ in range(trials):
