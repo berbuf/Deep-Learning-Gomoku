@@ -103,7 +103,7 @@ def mcts(board, player, root, network):
     return next move, updated board, policy vector, next root and boolean for game status
     """
     # parameters: number of search
-    trials = 5
+    trials = 6
 
     # build tree
     for _ in range(trials):

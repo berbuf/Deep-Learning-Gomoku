@@ -167,7 +167,7 @@ def reinforcement():
     number_training = 2
     number_evaluation = 2
     batch_size = 2048
-    size_train_labels = 500000
+    size_train_labels = 50000
 
     # get champion version
     version = len(os.listdir("../labels/")) - 1
@@ -186,6 +186,6 @@ def reinforcement():
         print ("\nevaluation, number_evaluation:", number_evaluation)
         score = evaluation(number_evaluation, version, trainee)
         if score > 55:
-            version, trainee = clone(version)
+            trainee, version = clone(version)
 
         print ("\nfinal evaluation score:", score, "actual version", version)

@@ -24,9 +24,11 @@ class Network(object):
                 self._state = tf.placeholder(tf.float32, shape=[None, 19, 19, 3])
                 self._isTraining = tf.placeholder(tf.bool)
                 self._p_head, self._v_head = network(self._state, self._isTraining)
-                self._optimizer, self._loss, self._train_p_mcts, self._train_winner = loss_function(self._state,
-                                                                                                     self._p_head,
-                                                                                                     self._v_head)
+                (self._optimizer,
+                 self._loss, self._train_p_mcts,
+                self._train_winner) = loss_function(self._state,
+                                                    self._p_head,
+                                                    self._v_head)
                 self._glob = tf.global_variables_initializer()
                 self._sess = tf.Session(graph=self._graph)
                 self._sess.run(self._glob)
@@ -153,7 +155,6 @@ def policy_head(input, training):
         return tanh
 
 def network(input, training):
-    print('network')
     layer = conv_layer(input, training)
     for i in range(16):
         layer = res_layer(layer, training, i)

@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 labels/*
+models/*
 
 # C extensions
 *.so
