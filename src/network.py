@@ -35,6 +35,10 @@ class Network(object):
                 writer = tf.summary.FileWriter('./logs')
                 writer.add_graph(self._graph)
 
+    def upgrade(self):
+        """ """
+        self._session += 1
+
     def infer(self, board):
         """
         infer policy and value from board state

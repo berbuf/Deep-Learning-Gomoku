@@ -66,7 +66,7 @@ def sequence(board, player, p_node, p_net, o_node, o_net, labels):
     pos, board, p, p_node, status = mcts(board, player, p_node, p_net)
     o_node = update_turn(board, player ^ 1, o_node, o_net, pos)
     save_tmp_label(labels, board, p, player)
-    print_board(board)
+    #print_board(board)
     return status, p_node, o_node
 
 def game(net_1, net_2):
@@ -104,20 +104,12 @@ def get_training_labels(version, size):
         version -= 1
     return labels
 
-def clone(version):
-    """
-    take version number and duplicate weights as version + 1
-    return new trainee and version + 1
-    """
-    return Network(version), version + 1,
-
-def evaluation(number_games, version, trainee):
+def evaluation(number_games, champion, trainee):
     """
     take number_games, version and trainee
     return percentage of victory after n games
     """
     win = 0
-    champion = Network(version)
     for i in range(number_games):
         print(i, end=" ", flush=True)
         _, winner = game(trainee, champion)
@@ -145,19 +137,15 @@ def training(number_training, batch_size, size_train_labels, version, trainee):
 
     del labels
 
-def self_play(number_games, version):
+def self_play(number_games, player, version):
     """
     take number_games version, and produce labels
     """
     path_label = "../labels/labels_" + str(version) + ".npy"
-    player_1 = Network(version)
-    player_2 = Network(version)
     for i in range(number_games):
         print(i, end=" ", flush=True)
-        tmp_labels, winner = game(player_1, player_2)
+        tmp_labels, winner = game(player, player)
         save_final_label(tmp_labels, winner, path_label)
-    player_1.save_session()
-    player_2.save_session()
 
 def reinforcement():
     """
@@ -168,15 +156,18 @@ def reinforcement():
     number_evaluation = 2
     batch_size = 2048
     size_train_labels = 50000
+    epoch = 0
 
     # get champion version
     version = len(os.listdir("../labels/"))
     trainee = Network(version)
+    champion = Network(version)
+    trainee.save_session()
 
     while (True):
         # produce labels from best version
         print ("self play, number_games:", number_games, "version:", version)
-        self_play(number_games, version)
+        self_play(number_games, trainee, version)
 
         # cloned trainee learns from labels
         print ("\ntraining, number_training:", number_training, "version:", version)
@@ -184,8 +175,14 @@ def reinforcement():
 
         # if trainee beats champion, trainee becomes champion, new trainee is cloned from it
         print ("\nevaluation, number_evaluation:", number_evaluation)
-        score = evaluation(number_evaluation, version, trainee)
+        score = evaluation(number_evaluation, champion, trainee)
         if score > 55:
-            trainee, version = clone(version)
+            version += 1
+            trainee.save_session()
+            champion = Network(version)
+            trainee = Network(version)
 
-        print ("\nfinal evaluation score:", score, "actual version", version)
+        epoch += 1
+        print ("\nfinal evaluation score:", score, "actual version", version, " number of epoch", epoch)
+
+    trainee.save_session()
