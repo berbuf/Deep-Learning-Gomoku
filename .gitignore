@@ -5,6 +5,7 @@ __pycache__/
 
 labels/*
 models/*
+src/logs/*
 
 # C extensions
 *.so
