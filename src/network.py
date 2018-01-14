@@ -11,29 +11,35 @@ class Network(object):
         """
         init network
         """
-        path_to_restore_model = "../models/model-" + str(version) + ".ckpt";
+        path_to_restore_model = "../models/model-" + str(version) + ".meta";
         self.version = version
-
-        if os.path.isfile(path_to_restore_model):
-            print("restore")
-            saver = tf.train.Saver()
-            saver.restore(self._sess, path_to_restore_model)
-        else:
-            self._graph = tf.Graph()
-            with self._graph.as_default():
+        self._graph = tf.Graph()
+        with self._graph.as_default():
+            self._sess = tf.Session(graph=self._graph)
+            if os.path.isfile(path_to_restore_model):
+                print("restore")
+                saver = tf.train.import_meta_graph(path_to_restore_model)
+                saver.restore(self._sess, tf.train.latest_checkpoint('../models/'))
+                self._p_head = self._graph.get_tensor_by_name("policy_head/Tanh:0")
+                self._v_head = self._graph.get_tensor_by_name("value_head/strided_slice:0")
+                self._state = self._graph.get_tensor_by_name("Placeholder:0")
+                self._isTraining = self._graph.get_tensor_by_name("Placeholder_1:0")
+                self._loss = self._graph.get_tensor_by_name("loss/add_1:0")
+                self._train_winner = self._graph.get_tensor_by_name("loss/Placeholder_1:0")
+                self._train_p_mcts = self._graph.get_tensor_by_name("loss/Placeholder:0")
+            else :
                 self._state = tf.placeholder(tf.float32, shape=[None, 19, 19, 3])
                 self._isTraining = tf.placeholder(tf.bool)
                 self._p_head, self._v_head = network(self._state, self._isTraining)
                 (self._optimizer,
                  self._loss, self._train_p_mcts,
-                self._train_winner) = loss_function(self._state,
-                                                    self._p_head,
-                                                    self._v_head)
+                 self._train_winner) = loss_function(self._state,
+                                                     self._p_head,
+                                                     self._v_head)
                 self._glob = tf.global_variables_initializer()
-                self._sess = tf.Session(graph=self._graph)
                 self._sess.run(self._glob)
-                writer = tf.summary.FileWriter('./logs')
-                writer.add_graph(self._graph)
+            writer = tf.summary.FileWriter('./logs')
+            writer.add_graph(self._graph)
 
     def upgrade(self):
         """ """
@@ -49,9 +55,9 @@ class Network(object):
     def save_session(self):
         with self._graph.as_default():
             saver = tf.train.Saver()
-            saver_path = saver.save(self._sess, "../models/model-" + str(self.version) + ".ckpt")
+            saver_path = saver.save(self._sess, "../models/model-" + str(self.version))
             print("model saved in %s" %saver_path)
-        return
+            return
 
     def train(self, board, p, z):
         """
@@ -65,7 +71,6 @@ class Network(object):
             board = np.array(board.tolist())
             p = np.array(p.tolist())
             z = np.array(z.tolist())
-            print("m")
             self._sess.run([self._optimizer],
                            feed_dict={self._state: board,
                                       self._train_p_mcts: p,
