@@ -27,6 +27,26 @@ THREATS = [
     ('\x00\x01\x01\x01\x00', 0.1),
 ]
 
+def get_score(pmap, pos, threat):
+    score = 0
+    line = pmap[pos[1]] # get line at pos
+    p = pos[0]
+    score += threat[1] * (threat[0] in ''.join(map(chr, line[max(p-5, 0):p+5])))
+
+    line = pmap[:,pos[0]] # get column at pos
+    p = pos[1]
+    score += threat[1] * (threat[0] in ''.join(map(chr, line[max(p-5, 0):p+5])))
+
+    line = pmap.diagonal(pos[0] - pos[1]) # get diagonal 1
+    p = min(pos[0], pos[1])
+    score += threat[1] * (threat[0] in ''.join(map(chr, line[max(p-5, 0):p+5])))
+
+    line = np.fliplr(pmap).diagonal(18 - pos[0] - pos[1]) # get diagonal 2
+    p = min(pos[1], 18 - pos[0])
+    score += threat[1] * (threat[0] in ''.join(map(chr, line[max(p-5, 0):p+5])))
+    return score
+
+
 def evaluate(board, player, pos):
     """
     give a score to the current state
@@ -36,28 +56,13 @@ def evaluate(board, player, pos):
     """
 
     score = 0
-
     maps = [ board[:,:,0], board[:,:,1] ]
     pmap = maps[player]
 
-    for threat, value in THREATS:
-        line = pmap[pos[1]] # get line at pos
-        p = pos[0]
-        score += value * (threat in ''.join(map(chr, line[max(p-5, 0):p+5])))
+    for threat in THREATS:
+        score += get_score(pmap, pos, threat)
 
-        line = pmap[:,pos[0]] # get column at pos
-        p = pos[1]
-        score += value * (threat in ''.join(map(chr, line[max(p-5, 0):p+5])))
-
-        line = pmap.diagonal(pos[0] - pos[1]) # get diagonal 1
-        p = min(pos[0], pos[1])
-        score += value * (threat in ''.join(map(chr, line[max(p-5, 0):p+5])))
-
-        line = np.fliplr(pmap).diagonal(18 - pos[0] - pos[1]) # get diagonal 2
-        p = min(pos[1], 18 - pos[0])
-        score += value * (threat in ''.join(map(chr, line[max(p-5, 0):p+5])))
-
-    return score
+    return score, get_score(pmap, pos, THREATS[0]) != 0
 
 def expand(node, board, player, network):
     """
