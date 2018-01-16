@@ -16,30 +16,47 @@ def evaluate(board, player, pos):
     player => 0 or 1
     pos => (x, y)
     """
+
+    score = 0
+    threats = [
+        ('\x01\x01\x01\x01\x01', 1),
+        ('\x00\x01\x01\x01\x01\x00', 0.2),
+        ('\x01\x01\x01\x01\x00', 0.2),
+        ('\x00\x01\x01\x01\x01', 0.2),
+        ('\x01\x01\x01\x00\x01', 0.2),
+        ('\x01\x00\x01\x01\x01', 0.2),
+        ('\x01\x01\x00\x01\x01', 0.2),
+        ('\x01\x01\x01\x00\x00', 0.1),
+        ('\x00\x00\x01\x01\x01', 0.1),
+        ('\x01\x01\x00\x00\x01', 0.1),
+        ('\x01\x00\x00\x01\x01', 0.1),
+        ('\x01\x01\x00\x01\x00', 0.1),
+        ('\x00\x01\x00\x01\x01', 0.1),
+        ('\x01\x00\x01\x00\x01', 0.1),
+        ('\x00\x01\x01\x01\x00', 0.1),
+    ]
+
     maps = [ board[:,:,0], board[:,:,1] ]
     pmap = maps[player]
 
-    line = pmap[pos[1]] # get line at pos
-    p = pos[0]
-    if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
-        return 1
+    for threat, value in threats:
+        line = pmap[pos[1]] # get line at pos
+        p = pos[0]
+        score += value * (threat in ''.join(map(chr, line[max(p-5, 0):p+5])))
 
-    line = pmap[:,pos[0]] # get column at pos
-    p = pos[1]
-    if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
-        return 1
+        line = pmap[:,pos[0]] # get column at pos
+        p = pos[1]
+        score += value * (threat in ''.join(map(chr, line[max(p-5, 0):p+5])))
 
-    line = pmap.diagonal(pos[0] - pos[1]) # get diagonal 1
-    p = min(pos[0], pos[1])
-    if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
-        return 1
+        line = pmap.diagonal(pos[0] - pos[1]) # get diagonal 1
+        p = min(pos[0], pos[1])
+        score += value * (threat in ''.join(map(chr, line[max(p-5, 0):p+5])))
 
-    line = np.fliplr(pmap).diagonal(18 - pos[0] - pos[1]) # get diagonal 2
-    p = min(pos[1], 18 - pos[0])
-    if '\x01\x01\x01\x01\x01' in ''.join(map(chr, line[max(p-4, 0):p+5])):
-        return 1
+        line = np.fliplr(pmap).diagonal(18 - pos[0] - pos[1]) # get diagonal 2
+        p = min(pos[1], 18 - pos[0])
+        score += value * (threat in ''.join(map(chr, line[max(p-5, 0):p+5])))
 
-    return 0
+    return score
 
 def expand(node, board, player, network):
     """
