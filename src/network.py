@@ -6,6 +6,8 @@ import numpy as np
 class Network
 """
 
+NB_RES_LAYERS = 10
+
 class Network(object):
     def __init__(self, version):
         """
@@ -165,7 +167,7 @@ def policy_head(input, training):
 
 def network(input, training):
     layer = conv_layer(input, training)
-    for i in range(16):
+    for i in range(NB_RES_LAYERS):
         layer = res_layer(layer, training, i)
     policy = policy_head(layer, training)
     value = value_head(layer, training)

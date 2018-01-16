@@ -5,6 +5,7 @@ class node, implement a level of deepness in a certain path for the monte carlo 
 """
 
 import numpy as np
+import random as rd
 
 class Node(object):
     """
@@ -84,9 +85,19 @@ class Node(object):
 
     def get_max_frequency_move(self):
         """
-        return max visited node
+        return a random on max visited node
         """
-        return np.argmax( [ node.get_frequency() for _, node in self._children.items() ] )
+        f = [ node.get_frequency() for _, node in self._children.items() ]
+        #print (f)
+        ix = np.where( f == np.max(f) )[0]
+        return ix[ rd.randint(0, len(ix) - 1) ]
+        #return np.argmax( [ node.get_frequency() for _, node in self._children.items() ] )
+
+    def get_mcts(self):
+        """
+        return output scores for p labels
+        """
+        return np.array([ node.get_score() for _, node in self._children.items() ])
 
     def debug(self):
         print ( [ node.get_frequency() for _, node in self._children.items() ] )

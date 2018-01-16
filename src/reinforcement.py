@@ -34,8 +34,8 @@ def init_game(network_1, network_2):
     """
     init game board, first node, next player turn
     """
-    board = init_map()
-    # board = np.zeros((19, 19, 3), np.int8)
+    #board = init_map()
+    board = np.zeros((19, 19, 3), np.int8)
     # player 1
     node_p_1 = Node(0)
     expand(node_p_1, board, 0, network_1)
@@ -79,9 +79,11 @@ def game(net_1, net_2):
     while (True):
         status, p_1, p_2 = sequence(board, 0, p_1, net_1, p_2, net_2, labels)
         if status:
+            print_board(board)
             return labels, 0
         status, p_2, p_1 = sequence(board, 1, p_2, net_2, p_1, net_1, labels)
         if status:
+            print_board(board)
             return labels, 1
 
 def random_rotation(s, p, z):
@@ -154,12 +156,12 @@ def reinforcement():
     number_games = 2
     number_training = 2
     number_evaluation = 2
-    batch_size = 2048
+    batch_size = 1024
     size_train_labels = 50000
     epoch = 0
 
     # get champion version
-    version = len(os.listdir("../labels/"))
+    version = 1
     trainee = Network(version)
     champion = Network(version)
     trainee.save_session()
@@ -167,7 +169,7 @@ def reinforcement():
     while (True):
         # produce labels from best version
         print ("self play, number_games:", number_games, "version:", version)
-        self_play(number_games, trainee, version)
+        self_play(number_games, champion, version)
 
         # cloned trainee learns from labels
         print ("\ntraining, number_training:", number_training, "version:", version)
@@ -186,3 +188,7 @@ def reinforcement():
         print ("\nfinal evaluation score:", score, "actual version", version, " number of epoch", epoch)
 
     trainee.save_session()
+
+if __name__ == '__main__':
+    # training
+    reinforcement()

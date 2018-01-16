@@ -9,6 +9,24 @@ import numpy as np
 from node import Node
 from utils_board import update_board_player, put_on_board, get_pos_on_board
 
+THREATS = [
+    ('\x01\x01\x01\x01\x01', 1),
+    ('\x00\x01\x01\x01\x01\x00', 0.2),
+    ('\x01\x01\x01\x01\x00', 0.2),
+    ('\x00\x01\x01\x01\x01', 0.2),
+    ('\x01\x01\x01\x00\x01', 0.2),
+    ('\x01\x00\x01\x01\x01', 0.2),
+    ('\x01\x01\x00\x01\x01', 0.2),
+    ('\x01\x01\x01\x00\x00', 0.1),
+    ('\x00\x00\x01\x01\x01', 0.1),
+    ('\x01\x01\x00\x00\x01', 0.1),
+    ('\x01\x00\x00\x01\x01', 0.1),
+    ('\x01\x01\x00\x01\x00', 0.1),
+    ('\x00\x01\x00\x01\x01', 0.1),
+    ('\x01\x00\x01\x00\x01', 0.1),
+    ('\x00\x01\x01\x01\x00', 0.1),
+]
+
 def evaluate(board, player, pos):
     """
     give a score to the current state
@@ -18,28 +36,11 @@ def evaluate(board, player, pos):
     """
 
     score = 0
-    threats = [
-        ('\x01\x01\x01\x01\x01', 1),
-        ('\x00\x01\x01\x01\x01\x00', 0.2),
-        ('\x01\x01\x01\x01\x00', 0.2),
-        ('\x00\x01\x01\x01\x01', 0.2),
-        ('\x01\x01\x01\x00\x01', 0.2),
-        ('\x01\x00\x01\x01\x01', 0.2),
-        ('\x01\x01\x00\x01\x01', 0.2),
-        ('\x01\x01\x01\x00\x00', 0.1),
-        ('\x00\x00\x01\x01\x01', 0.1),
-        ('\x01\x01\x00\x00\x01', 0.1),
-        ('\x01\x00\x00\x01\x01', 0.1),
-        ('\x01\x01\x00\x01\x00', 0.1),
-        ('\x00\x01\x00\x01\x01', 0.1),
-        ('\x01\x00\x01\x00\x01', 0.1),
-        ('\x00\x01\x01\x01\x00', 0.1),
-    ]
 
     maps = [ board[:,:,0], board[:,:,1] ]
     pmap = maps[player]
 
-    for threat, value in threats:
+    for threat, value in THREATS:
         line = pmap[pos[1]] # get line at pos
         p = pos[0]
         score += value * (threat in ''.join(map(chr, line[max(p-5, 0):p+5])))
@@ -119,8 +120,9 @@ def mcts(board, player, root, network):
     take board, player turn (0, 1), root node
     return next move, updated board, policy vector, next root and boolean for game status
     """
+
     # parameters: number of search
-    trials = 6
+    trials = 1000
 
     # build tree
     for _ in range(trials):
@@ -128,7 +130,8 @@ def mcts(board, player, root, network):
 
     # reshape policy to (361)
     p = np.ones(361) - (board[:,:,0] + board[:,:,1]).flatten()
-    p[ p == 1 ] = root.get_policy() * (1 - 2 * player)
+    p[ p == 1 ] = root.get_mcts() * (1 - 2 * player)
+    print (p)
 
     # get coordinates of chosen move, and update board
     n = root.get_max_frequency_move()
