@@ -1,19 +1,51 @@
-#!/usr/bin/env python3                                                                                   
-
-"""                                                                                                      
+#!/usr/bin/env python3
+"""
 misc functions about board management
 """
 
 import numpy as np
 
+def print_policy(board, p):
+    """
+    debug: print policy
+    """
+    board = (board[:,:,0] + board[:,:,1] * 2)
+    for y in range(19):
+        l = ""
+        for x in range(19):
+            tile = p[y * 19 + x]
+            if tile < -0.7:
+                c = "31" # red
+            elif tile < -0.3:
+                c = "33" # yellow
+            elif tile < 0:
+                c = "35" # magenta
+            elif tile == 0:
+                c = "37" # white
+            elif tile < 0.3:
+                c = "34" # blue
+            elif tile < 0.7:
+                c = "36" # cyan
+            else:
+                c = "32" # green
+            if board[y, x] != 0:
+                l += "  X   "
+            else:
+                l += "\033[" + c + ";10m" + "{0:.2f}".format(tile) + "\033[0m  "
+        print (l)
+
 def print_board(board):
-    """                                                                                                  
-    debug, print current map to term with colours                                                        
+    """
+    debug, print current map to term with colours
     """
     board = (board[:,:,0] + board[:,:,1] * 2)
     print ("board:")
-    for line in board:
-        l = ""
+    l = "  "
+    for i in range(19):
+        l += "{:d} ".format(i)
+    print (l)
+    for i, line in enumerate(board):
+        l = "{:d} ".format(i)
         for tile in line:
             if tile == 1:
                 l += "\033[34;10m" + str(tile) + "\033[0m "
@@ -24,8 +56,8 @@ def print_board(board):
         print (l)
 
 def conv_map(m):
-    """                                                                                                  
-    convert test map to shape (19, 19, 3)                                                                
+    """
+    convert test map to shape (19, 19, 3)
     """
     p1 = np.copy(m)
     np.place(p1, p1 == 2, 0)

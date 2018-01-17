@@ -83,15 +83,14 @@ class Node(object):
         """
         return self._children[nb_child]
 
-    def get_max_frequency_move(self):
+    def get_best_move(self, player):
         """
-        return a random on max visited node
+        return best move according to mcts score
+        random among equal values
         """
-        f = [ node.get_frequency() for _, node in self._children.items() ]
-        #print (f)
+        f = np.array([ node.get_score() for _, node in self._children.items() ]) * (1 - 2 * player)
         ix = np.where( f == np.max(f) )[0]
         return ix[ rd.randint(0, len(ix) - 1) ]
-        #return np.argmax( [ node.get_frequency() for _, node in self._children.items() ] )
 
     def get_mcts(self):
         """
@@ -100,14 +99,8 @@ class Node(object):
         return np.array([ node.get_score() for _, node in self._children.items() ])
 
     def debug(self):
-        print ( [ node.get_frequency() for _, node in self._children.items() ] )
-        
-        return
-        print ("score")
-        print ( [ node.get_score() for _, node in self._children.items() ] )
-        print ("len children")
-        print (len(self._children))
-        print ( np.sum( [ node.get_frequency() for _, node in self._children.items() ] ) )
+        print (self._frequency)
+        print ([ node.get_frequency() for _, node in self._children.items() ])
 
     def __str__(self):
         """

@@ -7,7 +7,7 @@ with the help of a policy and value network
 
 import numpy as np
 from node import Node
-from utils_board import update_board_player, put_on_board, get_pos_on_board
+from utils_board import update_board_player, put_on_board, get_pos_on_board, print_policy
 
 THREATS = [
     ('\x01\x01\x01\x01\x01', 1),
@@ -25,6 +25,7 @@ THREATS = [
     ('\x00\x01\x00\x01\x01', 0.1),
     ('\x01\x00\x01\x00\x01', 0.1),
     ('\x00\x01\x01\x01\x00', 0.1),
+    ('\x01\x01', 0.01),
 ]
 
 def get_score(pmap, pos, threat):
@@ -46,7 +47,6 @@ def get_score(pmap, pos, threat):
     score += threat[1] * (threat[0] in ''.join(map(chr, line[max(p-5, 0):p+5])))
     return score
 
-
 def evaluate(board, player, pos):
     """
     give a score to the current state
@@ -54,14 +54,11 @@ def evaluate(board, player, pos):
     player => 0 or 1
     pos => (x, y)
     """
-
     score = 0
     maps = [ board[:,:,0], board[:,:,1] ]
     pmap = maps[player]
-
     for threat in THREATS:
         score += get_score(pmap, pos, threat)
-
     return score, get_score(pmap, pos, THREATS[0]) != 0
 
 def expand(node, board, player, network):
@@ -70,12 +67,6 @@ def expand(node, board, player, network):
     predict state value, and probability for children using neural network
     """
     update_board_player(board, player)
-    # dummy values
-    """
-    p, v = (np.array( [ 1.5 for i in range(19 * 19) ] ), 0)
-    p = p[np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)]
-    # run network (time consuming)
-    """
     p, v = network.infer(board)
     # remove already played tiles
     p = p[0][np.where((board[:,:,0] + board[:,:,1]).flatten() == 0)]
@@ -89,7 +80,7 @@ def select(node, board, player):
     """
     return chosen node, updated board, new coordinates
     """
-    # choose next node
+    # choose next node, best neg for black
     n = np.argmax(node.get_policy() * (1 - 2 * player))
     child = node.get_child(n)
     child.add_frequency()
@@ -108,10 +99,12 @@ def search(node, board, player, network):
     child, board, pos, next_player = select(node, board, player)
     # evaluate or keep searching
     if child.leaf():
-        value = evaluate(board, player, pos)
+        value, e = evaluate(board, player, pos)
+        # neg if black
+        value *= (1 - 2 * player)
         # if not a winning move
-        if not value:
-            value = expand(child, board, next_player, network)
+        if not e:
+            expand(child, board, next_player, network)
     else:
         value = search(child, board, next_player, network)
     # clean board and back propagate
@@ -127,7 +120,7 @@ def mcts(board, player, root, network):
     """
 
     # parameters: number of search
-    trials = 1000
+    trials = 6
 
     # build tree
     for _ in range(trials):
@@ -136,11 +129,20 @@ def mcts(board, player, root, network):
     # reshape policy to (361)
     p = np.ones(361) - (board[:,:,0] + board[:,:,1]).flatten()
     p[ p == 1 ] = root.get_mcts() * (1 - 2 * player)
-    print (p)
 
     # get coordinates of chosen move, and update board
-    n = root.get_max_frequency_move()
+    n = root.get_best_move(player)
+
+    # update board
     x, y = get_pos_on_board(board, n)
     put_on_board(board, (x, y), player, 1)
 
-    return ((x, y), board, p, root.get_child(n), evaluate(board, player, (x, y)))
+    # if unexplored child
+    child = root.get_child(n)
+    if child.leaf():
+        expand(child, board, player ^ 1, network)
+
+    # get status game
+    _, e = evaluate(board, player, (x, y))
+
+    return ((x, y), board, p, child, e)

@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+
+"""
+interactive prompt
+"""
+
+import argparse
+
+
+def human_turn():
+    pos = input("Yout turn, Human (x, y)")
+     = pos.split(",")
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Description of your program')
+    parser.add_argument('-s', help='1 or 2, if you play white or black', required=True)
+    parser.add_argument('-v', help='Network version', required=True)
+    parser.add_argument('-d', help='1 or 0, Outputs network policy, and mcts policy', required=True)
+    args = vars(parser.parse_args())
+
+    player = int(args["s"]) - 1
+    version = int(args["v"])
+    debug = int(args["d"])
+
+    board = np.zeros((19, 19, 3), np.int8)
+
+    node = Node(0)
+    net = Network(version)
+    expand(node, board, player, net)
+
+    r = 0
+    while (r):
+
+        # play
+        if debug:
+            p, _ = net.infer()
+            print_policy(p)
+
+        _, board, p_, node, r = mcts(board, player ^ 1, node, net)
+        if debug:
+            print_policy(p_)
+
+        
+        # update
+        o_node = update_turn(board, player ^ 1, o_node, o_net, pos)
+
+        # ask human
+        

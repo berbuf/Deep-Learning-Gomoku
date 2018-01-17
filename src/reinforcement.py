@@ -96,26 +96,25 @@ def random_rotation(s, p, z):
     p = np.rot90(p.reshape((19, 19)), r, (0, 1)).flatten()
     return (s, p, z)
 
-def get_training_labels(version, size):
-    """
-    size labels from the most recent ones
-    """
-    labels = []
-    while (len(labels) < size and version > 0):
-        labels += list(np.load("../labels/labels_" + str(version) + ".npy"))
-        version -= 1
-    return labels
-
 def evaluation(number_games, champion, trainee):
     """
     take number_games, version and trainee
     return percentage of victory after n games
     """
     win = 0
-    for i in range(number_games):
+    i = 0
+    while (i < number_games):
+        print(i, end=" ", flush=True)
+        _, winner = game(champion, trainee)
+        win += winner
+
+        i += 1
+
         print(i, end=" ", flush=True)
         _, winner = game(trainee, champion)
-        win += winner
+        win += not winner
+        i += 1
+
     return win / number_games * 100
 
 def training(number_training, batch_size, size_train_labels, version, trainee):
@@ -123,7 +122,7 @@ def training(number_training, batch_size, size_train_labels, version, trainee):
     take number_training, version and trainee
     train on label
     """
-    labels = get_training_labels(version, size_train_labels)
+    labels = list(np.load("../labels/labels_" + str(version) + ".npy"))[-size_train_labels:]
     for i in range(number_training):
         print(i, end=" ", flush=True)
 
@@ -179,6 +178,7 @@ def reinforcement():
         print ("\nevaluation, number_evaluation:", number_evaluation)
         score = evaluation(number_evaluation, champion, trainee)
         if score > 55:
+            os.remove("../labels/labels_" + str(version) + ".npy")
             version += 1
             trainee.save_session()
             champion = Network(version)
