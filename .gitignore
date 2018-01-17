@@ -5,8 +5,9 @@ __pycache__/
 
 labels/*
 models/*
+models/*
+!models/.gitkeep
 src/logs/*
-
 # C extensions
 *.so
 
