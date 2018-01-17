@@ -15,23 +15,21 @@ from utils_board import put_on_board, print_board, print_policy
 def human_turn(board, node, player, net):
     print ("Your turn, Human")
 
-    yo = 0
-    while (not yo):
+    e = 0
+    while (not e):
         try:
             x = int(input("x: "))
             y = int(input("y: "))
-            yo = 1
+            e = 1
         except:
             print ("wrong format, only integers required")
             q = input("quit? (y/n): ")
             if q == "y":
                 exit (0)
-        
+
     pos = (x, y)
 
     put_on_board(board, pos, player, 1)
-
-    print_board(board)
 
     node = update_turn(board, player ^ 1, node, net, pos)
     _, r = evaluate(board, player, pos)
@@ -66,21 +64,24 @@ if __name__ == '__main__':
 
         # ia
         if debug:
-            p, _ = net.infer()
-            print_policy(p)
+            p, _ = net.infer(board)
 
         _, board, p_, node, r = mcts(board, player ^ 1, node, net)
+        if debug:
+            print ("Network policy:")
+            print_policy(board, p[0])
+            print ("Mcts policy:")
+            print_policy(board, p_)
 
         print_board(board)
-
-        if debug:
-            print_policy(p_)
 
         if r:
             break
 
         # human
-        node, _ = human_turn(board, node, player, net) 
+        node, r = human_turn(board, node, player, net) 
+        print_board(board)
+
         if r:
             break
        

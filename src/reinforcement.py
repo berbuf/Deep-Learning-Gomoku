@@ -152,9 +152,9 @@ def reinforcement():
     """
     train model against itself
     """
-    number_games = 2
-    number_training = 2
-    number_evaluation = 2
+    number_games = 10
+    number_training = 10
+    number_evaluation = 6
     batch_size = 1024
     size_train_labels = 50000
     epoch = 0

@@ -42,17 +42,17 @@ def print_board(board):
     print ("board:")
     l = "  "
     for i in range(19):
-        l += "{:d} ".format(i)
+        l += "{0:02d} ".format(i)
     print (l)
     for i, line in enumerate(board):
-        l = "{:d} ".format(i)
+        l = "{0:02d} ".format(i)
         for tile in line:
             if tile == 1:
-                l += "\033[34;10m" + str(tile) + "\033[0m "
+                l += "\033[34;10m" + str(tile) + "\033[0m  "
             elif tile == 2:
-                l += "\033[31;10m" + str(tile) + "\033[0m "
+                l += "\033[31;10m" + str(tile) + "\033[0m  "
             else:
-                l += "  "
+                l += "   "
         print (l)
 
 def conv_map(m):
@@ -92,14 +92,14 @@ def init_map():
                               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]))
 
 def update_board_player(board, player):
-    """                                                                                                  
-    update third layer of board (white(0) => all zeros, black(1) => all ones)                            
+    """
+    update third layer of board (white(0) => all zeros, black(1) => all ones)
     """
     board[:,:,2] = player
 
 def put_on_board(board, pos, player, value):
-    """                                                                                                  
-    act on board, with player (0, 1), at x, y with value (0, 1)                                          
+    """
+    act on board, with player (0, 1), at x, y with value (0, 1)
     """
     board[pos[1], pos[0], player] = value
 
